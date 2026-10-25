@@ -48,8 +48,8 @@ def test_ex0_writes_one_frame_per_csv_row(tmp_path):
     mp4_path = tmp_path / "out.mp4"
     _write_volume(nrrd_path)
     csv_path.write_text(
-        "1,1,1, 1,6,1, 6,6,1\n"
-        "0,0,2, 4,0,2, 0,5,2, 4,5,2\n",
+        "3,1,1,1, 1,6,1, 6,6,1,,,\n"
+        "4,0,0,2, 0,5,2, 4,0,2, 4,5,2\n",
         encoding="utf-8",
     )
 
@@ -69,7 +69,7 @@ def test_bad_column_count_names_the_line(tmp_path):
     mp4_path = tmp_path / "out.mp4"
     _write_volume(nrrd_path)
     csv_path.write_text(
-        "1,1,1, 1,6,1, 6,6,1\n"
+        "3,1,1,1, 1,6,1, 6,6,1,,,\n"
         "1,2,3,4,5\n",
         encoding="utf-8",
     )
@@ -84,7 +84,7 @@ def test_bad_column_count_names_the_line(tmp_path):
 def test_missing_nrrd_and_wrong_usage(tmp_path):
     missing = tmp_path / "missing.nrrd"
     csv_path = tmp_path / "planes.csv"
-    csv_path.write_text("1,1,1, 1,6,1, 6,6,1\n", encoding="utf-8")
+    csv_path.write_text("3,1,1,1, 1,6,1, 6,6,1,,,\n", encoding="utf-8")
     mp4_path = tmp_path / "out.mp4"
 
     result = _run([str(missing), str(csv_path), str(mp4_path)])

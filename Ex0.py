@@ -2,9 +2,9 @@
 
 Usage: python Ex0.py file.nrrd file.csv file.mp4
 
-Each row is one plane, in order: 9 numbers for a triangle (a, b, c) or 12 for
-a trapezoid (a', a'', b, c). The projection and the grayscale window come from
-src/ (ALGORITHM.md).
+Each row is one plane, in order: a leading 3 or 4, then coordinates. A
+triangle is a, b, c. A trapezoid is a', b, a'', c. The projection and the
+grayscale window come from src/ (ALGORITHM.md).
 """
 
 import sys
