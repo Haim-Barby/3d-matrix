@@ -3,7 +3,7 @@
 Projection only: the volume is already in memory, and nothing is encoded.
 This file is not a pytest test. Run it directly:
 
-    python src/tests/benchmark.py
+    python tests/benchmark.py
 
 Must be at least 30 frames per second. The target is 100.
 """
@@ -15,7 +15,9 @@ from pathlib import Path
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "src"))
 
 from projection import project
 
