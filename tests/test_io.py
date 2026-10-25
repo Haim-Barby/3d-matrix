@@ -10,7 +10,8 @@ import pytest
 from io_utils import Plane, load_nrrd, load_planes
 
 
-def test_issue7_nrrd_round_trip_axis_order(tmp_path):
+def test_tc16_nrrd_uint16_axis_order(tmp_path):
+    """TC-16. FR-2, NFR-1. 4×5×6 uint16, index_order F, so M[1,2,3] stays 321."""
     # Non-cubic 4 x 5 x 6 volume. M[x, y, z] = x + 10y + 100z, so M[1, 2, 3] = 321.
     sx, sy, sz = 4, 5, 6
     x = np.arange(sx, dtype=np.uint16)[:, None, None]
@@ -32,7 +33,24 @@ def test_issue7_nrrd_round_trip_axis_order(tmp_path):
     assert np.array_equal(loaded, volume)
 
 
-def test_nrrd_rejects_bad_file_and_non_volume(tmp_path):
+def test_tc17_nrrd_uint8_and_uint32(tmp_path):
+    """TC-17. FR-2. 8-bit and 32-bit volumes come back as M[x, y, z]."""
+    for dtype in (np.uint8, np.uint32):
+        volume = np.zeros((2, 2, 2), dtype=dtype)
+        volume[1, 1, 1] = 7
+        path = tmp_path / f"v_{dtype.__name__}.nrrd"
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            nrrd.write(str(path), volume, index_order="F")
+        loaded = load_nrrd(path)
+        assert loaded.dtype == dtype
+        assert loaded.shape == (2, 2, 2)
+        assert loaded[1, 1, 1] == 7
+        assert np.array_equal(loaded, volume)
+
+
+def test_tc18_bad_nrrd_names_the_file(tmp_path):
+    """TC-18. FR-5. A bad file and a 2D array name the path. Neither is a volume."""
     bad = tmp_path / "notes.nrrd"
     bad.write_text("this is not an nrrd\n", encoding="utf-8")
     with pytest.raises(ValueError, match="notes.nrrd"):
@@ -47,7 +65,8 @@ def test_nrrd_rejects_bad_file_and_non_volume(tmp_path):
         load_nrrd(flat_path)
 
 
-def test_csv_parses_triangles_and_trapezoids_in_order(tmp_path):
+def test_tc19_csv_triangle_and_trapezoid(tmp_path):
+    """TC-19. FR-3. Count 3 then count 4. Trapezoid order is a', b, a'', c."""
     path = tmp_path / "planes.csv"
     path.write_text(
         "\n".join(
@@ -87,7 +106,8 @@ def test_csv_parses_triangles_and_trapezoids_in_order(tmp_path):
     assert np.array_equal(base_right, [10, 0, 5])
 
 
-def test_csv_bad_rows_name_the_file_and_line(tmp_path):
+def test_tc21_csv_bad_values_name_the_line(tmp_path):
+    """TC-21. FR-5. A bad count, a word, or a non-finite value names the line."""
     path = tmp_path / "bad.csv"
     path.write_text(
         "\n".join(
@@ -116,7 +136,8 @@ def test_csv_bad_rows_name_the_file_and_line(tmp_path):
         load_planes(path)
 
 
-def test_plane_project_matches_module_function():
+def test_tc26_plane_project_matches():
+    """TC-26. FR-6. Plane.project uses PROJECT order and hits the apex voxel."""
     volume = np.zeros((8, 8, 4), dtype=np.uint8)
     volume[3, 6, 1] = 9
     plane = Plane([[3, 6, 1], [0, 1, 1], [6, 1, 1]])
@@ -128,7 +149,8 @@ def test_plane_project_matches_module_function():
     assert image[0, center] == 9
 
 
-def test_plane_from_csv_names_the_row_when_degenerate(tmp_path):
+def test_tc23_degenerate_csv_names_the_line(tmp_path):
+    """TC-23. FR-4, FR-5. Degenerate rows name the file and the line."""
     path = tmp_path / "flat.csv"
     path.write_text("3,0,0,0, 0,0,0, 0,0,0,,,\n", encoding="utf-8")
     with pytest.raises(ValueError, match=r"flat\.csv: line 1:.*coincident"):
@@ -144,7 +166,8 @@ def test_plane_from_csv_names_the_row_when_degenerate(tmp_path):
         load_planes(path)
 
 
-def test_csv_header_comments_blanks_and_fractions(tmp_path):
+def test_tc20_csv_header_comments_blanks(tmp_path):
+    """TC-20. FR-3. Header, blanks, comments, spaces, and a negative fraction."""
     path = tmp_path / "planes.csv"
     path.write_text(
         "\n".join(
@@ -173,7 +196,8 @@ def test_csv_header_comments_blanks_and_fractions(tmp_path):
     assert np.array_equal(c, [4, 5, 1])
 
 
-def test_csv_count_mismatch_names_the_line(tmp_path):
+def test_tc22_csv_count_mismatch(tmp_path):
+    """TC-22. FR-3, FR-5. Count 4 with only 9 numbers, or count 3 with 12."""
     path = tmp_path / "bad.csv"
     path.write_text(
         "Number of Points (3 or 4),x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4\n"
@@ -188,7 +212,8 @@ def test_csv_count_mismatch_names_the_line(tmp_path):
         load_planes(path)
 
 
-def test_lecturer_example_row_4_has_no_leg_warning():
+def test_tc24_lecturer_example_row4():
+    """TC-24. FR-3, FR-4. Row 4 of lecturer_example.csv: equal legs, no warning."""
     path = Path(__file__).resolve().parents[1] / "csv" / "lecturer_example.csv"
     planes = load_planes(path)
     assert len(planes) == 4
@@ -206,3 +231,14 @@ def test_lecturer_example_row_4_has_no_leg_warning():
         warnings.simplefilter("always")
         plane.project(volume)
     assert caught == []
+
+
+def test_tc25_head_csv_has_280_planes():
+    """TC-25. FR-3. head.csv is one header plus 280 planes, the last 60 triangles."""
+    path = Path(__file__).resolve().parents[1] / "csv" / "head.csv"
+    planes = load_planes(path)
+    assert len(planes) == 280
+    assert planes[0].line == 2
+    assert planes[-1].line == 281
+    assert sum(plane.is_triangle for plane in planes) == 60
+    assert sum(not plane.is_triangle for plane in planes) == 220
