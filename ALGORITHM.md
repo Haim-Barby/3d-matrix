@@ -5,8 +5,10 @@ plane given by an isosceles triangle (or isosceles trapezoid) and returns a 2D i
 It starts from the method given in the assignment, lists the problems found in it,
 and defines the corrected algorithm that the implementation follows.
 
-Scope: the projection of **one plane into one 2D image**. Reading the CSV, building
-the video and encoding MP4 are outside this document.
+Scope: the algorithm takes a volume and one plane and produces (a) the raw
+projection `E` and (b) the 8-bit grayscale image `I` of that plane. Out of scope:
+reading the CSV, putting images into a common frame size, assembling frames into a
+video, and MP4 encoding (these belong to the demo, To Do #7).
 
 ---
 
@@ -30,6 +32,10 @@ the video and encoding MP4 are outside this document.
 - A 2D array of shape `(H, W)` (rows, columns), same dtype as `M`, indexed `E[y, x]`.
 - Row `y = 0` is the apex (or top edge); row `y = H-1` is the base.
 - Pixels outside the triangle, and samples that fall outside the volume, are `0`.
+
+**Image `I`**
+- A 2D `uint8` array of the same shape `(H, W)`, grayscale `0..255`, produced from
+  `E` as defined in section 4.4.
 
 **Notation**
 - `dist(p, q)` is the Euclidean distance.
@@ -198,6 +204,7 @@ SAMPLE(M, p):
 ```
 
 For a triangle, `PROJECT(M, a, a, b, c)`.
+The full per-plane result is `I = TO_IMAGE(PROJECT(M, a', a'', b, c), lo, hi)`.
 
 ### 4.2 Vectorised form (implementation)
 
@@ -226,6 +233,41 @@ All real-to-integer conversions (sizes, `n`, sample coordinates) use one rule:
 `round(v) = floor(v + 0.5)` (halves round up). It is used consistently, so a point
 exactly halfway between two voxels always maps to the same voxel.
 
+### 4.4 From projection E to image I
+
+`E` holds the raw voxel values. The image `I` is the 8-bit grayscale of that plane.
+The intensity window `[lo, hi]` is computed once per volume from `M`: `lo` is the
+1st percentile and `hi` the 99th percentile of `M`'s values. The window is global,
+not per plane, so the same voxel value gives the same gray level in every image of
+that volume.
+
+It is not computed per plane: brightness would change between planes and images
+could not be compared. Percentiles are used rather than the minimum and the maximum:
+one outlier voxel would darken the whole image.
+
+```
+WINDOW(M) -> (lo, hi)
+
+  lo = 1st percentile of the values of M
+  hi = 99th percentile of the values of M
+  return (lo, hi)
+
+
+TO_IMAGE(E, lo, hi) -> I
+
+  if hi == lo:                       # constant volume: no division by zero
+      return zeros(shape of E, uint8)
+  I = round(clip((E - lo) / (hi - lo), 0, 1) * 255) as uint8
+  return I
+```
+
+Pixels outside the triangle or trapezoid, and samples outside the volume, are `0`
+in `E`. They appear black in `I`. When `lo > 0` they map to `0` by clipping, which
+is the intended result.
+
+Vectorised: `I` is one numpy expression on the whole image. `WINDOW` is computed
+once at load time, not per plane.
+
 ---
 
 ## 5. Edge cases
@@ -240,4 +282,5 @@ exactly halfway between two voxels always maps to the same voxel.
 | Coincident points | Degenerate; rejected with an error. |
 | Legs differ by more than 1 voxel | Accepted, with a warning (issue 8). |
 | Point coordinates not numeric, or wrong count | Rejected with an error naming the row. |
+| Constant volume (`hi = lo`) | `I` is all zeros. |
 
