@@ -80,7 +80,7 @@ planes: 100, frames: 100, size: 502x502
 projection time: 0.979 s, 102.1 planes/s
 ```
 
-`python tests/benchmark.py` is a separate check: a synthetic 500³ volume, 100 projections, largest image 481×481. This run: 235.8 fps (must 30, target 100).
+`python tests/benchmark.py` times small, medium, and large planes on N = 64, 128, 256, and 500. On this machine the 500³ large plane (481×481) was 129.7 fps (must 30, target 100). The same 9×9 plane took 1.01× as long on 500³ as on 64³; the volume is 477× larger.
 
 ## Documents
 
