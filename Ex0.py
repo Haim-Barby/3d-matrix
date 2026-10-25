@@ -49,20 +49,22 @@ def main():
     lo, hi = window(volume)
     frames = [to_image(image, lo, hi) for image in raw]
 
-    # One canvas for every frame. Round up so both sides are even.
+    # One canvas for every frame, centred. Round up so both sides are even.
     height = max(frame.shape[0] for frame in frames)
     width = max(frame.shape[1] for frame in frames)
     height += height % 2
     width += width % 2
 
     writer = cv2.VideoWriter(
-        mp4_path, cv2.VideoWriter_fourcc(*"mp4v"), 5, (width, height)
+        mp4_path, cv2.VideoWriter_fourcc(*"mp4v"), 25, (width, height)
     )
     if not writer.isOpened():
         sys.exit(f"cannot open {mp4_path} for writing")
     for frame in frames:
         canvas = np.zeros((height, width), dtype=np.uint8)
-        canvas[: frame.shape[0], : frame.shape[1]] = frame
+        y0 = (height - frame.shape[0]) // 2
+        x0 = (width - frame.shape[1]) // 2
+        canvas[y0 : y0 + frame.shape[0], x0 : x0 + frame.shape[1]] = frame
         writer.write(cv2.cvtColor(canvas, cv2.COLOR_GRAY2BGR))
     writer.release()
 

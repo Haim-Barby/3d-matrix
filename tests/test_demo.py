@@ -61,6 +61,9 @@ def test_ex0_writes_one_frame_per_csv_row(tmp_path):
     assert reported == 2
     assert read == 2
     assert "frames: 2" in result.stdout
+    capture = cv2.VideoCapture(str(mp4_path))
+    assert capture.get(cv2.CAP_PROP_FPS) == 25
+    capture.release()
 
 
 def test_bad_column_count_names_the_line(tmp_path):
