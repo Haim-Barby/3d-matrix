@@ -22,11 +22,19 @@ video, and MP4 encoding (these belong to the demo, To Do #7).
   `M[x][y][z]` of the assignment (see issue 7).
 
 **Plane**
-- Triangle: three points `a, b, c` in voxel index coordinates (IJK, not millimetres),
+- Triangle: three points `a, b, c` in voxel index coordinates (IJK),
   where `a` is the apex and `b, c` are the base. Nominally `|ab| = |ac|`.
 - Trapezoid: four points `a', a'', b, c`, where `a'→a''` is the top edge,
   `a'→b` and `a''→c` are the two legs (nominally equal in length), and `b→c` is the base.
 - Points may be real-valued.
+- The CSV lists a trapezoid as `a', b, a'', c` (legs `a'→b` and `a''→c`) and a
+  triangle as `a, b, c`. `load_planes` maps a trapezoid row to
+  `PROJECT(M, a', a'', b, c)`.
+
+**Pixel size**
+- `dist` and the image grid are in voxel index space. One pixel is one voxel
+  step along the plane. NRRD spacing in millimetres is not applied, so an
+  anisotropic volume is not rescaled.
 
 **Output `E`**
 - A 2D array of shape `(H, W)` (rows, columns), same dtype as `M`, indexed `E[y, x]`.
@@ -149,8 +157,8 @@ Rounding before the check makes the boundary consistent: `-0.4 → 0` is inside,
 C order, the array is `[z, y, x]`; indexed as `[x, y, z]`, the projection silently
 samples the wrong plane. A cubic volume (e.g. 500³) gives no shape error to reveal it.
 **Fix.** Read with `pynrrd`, `index_order='F'`, so the array is `M[x, y, z]`, and
-assert that `M.shape` equals the header `sizes`. `pynrrd` is the only dependency
-besides numpy.
+check that `M.shape` equals the header `sizes`. The program does not parse NRRD
+itself. `pynrrd` and numpy are the dependencies of this algorithm.
 
 ### Issue 8: Exact isosceles assumption
 **Problem.** The method assumes `dist(a,b) = dist(a,c)` exactly and divides both legs

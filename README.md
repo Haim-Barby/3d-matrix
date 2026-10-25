@@ -1,29 +1,90 @@
 # 3D Matrix: Plane Projection
 
-## Problem
-Given a 3D volume (for example, an MRI scan stored as NRRD) and a plane defined by 3 or 4 points, compute the 2D image of the volume on that plane.
+Project a 3D NRRD volume onto planes from a CSV file and write one MP4 frame per plane.
 
-## Scope
-- **Input:** an NRRD file with the 3D volume, and a CSV file where each row is a plane (3 or 4 points, `x,y,z`).
-- **Output:** an MP4 video with one frame per plane, in the same order as the CSV. Frames are padded to a uniform canvas size.
-- **Algorithm:** ALGORITHM.md. Triangle and trapezoid are both in v1 (a triangle is the trapezoid with a' = a'' = a). The 8-bit image is part of the algorithm (one global 1st/99th percentile window per volume).
-- **Performance:** at least 30 FPS on a 500×500×500 volume (100 FPS is the target).
+Course: Introduction to Software Engineering (OOP/OOD), Ariel University, assignment Ex1. The program is `Ex0.py`.
 
-Out of scope: GUI, editing the volume, formats other than NRRD.
+## Install
 
-## Usage (planned)
+```
+pip install -r requirements.txt
+```
+
+Dependencies: numpy, pynrrd, opencv-python, pytest.
+
+## Usage
+
+From the repo root:
+
 ```
 python Ex0.py file.nrrd file.csv file.mp4
 ```
 
-## Status
-The algorithm is designed (ALGORITHM.md). Implementation is in progress. The video encoding library and the Ex0 vs Ex1 script name are still open.
+The experiment video (280 frames of MRHead):
+
+```
+python Ex0.py data-NRRD/MRHead_1.nrrd csv/head.csv video/mrhead_planes.mp4
+```
+
+Each CSV row is one plane. The file has a header `Number of Points (3 or 4),x1,y1,z1,...,x4,y4,z4`. A row starts with `3` (triangle `a, b, c`; the unused fourth point is empty) or `4` (trapezoid `a', b, a'', c`). `#` comments and blank lines are skipped. Coordinates are voxel indices. They may be fractional and may lie outside the volume.
+
+The image is 1 voxel per pixel in index space. It is not scaled to millimetres. Gray values use one window for the volume: the 1st and 99th percentiles. Frames are centred on a single canvas whose sides are even. The MP4 is OpenCV `mp4v` at 25 fps.
+
+## Layout
+
+- `Ex0.py` — demo program
+- `src/projection.py`, `src/io_utils.py` — projection, NRRD load, CSV load
+- `data-NRRD/` — volumes
+- `csv/` — `head.csv`, `croissant.csv`, `lecturer_example.csv`
+- `video/` — `mrhead_planes.mp4` and the small demo CSVs
+- `tests/` — pytest tests, `benchmark.py`, and the testing notes
+- `ALGORITHM.md`, `SRS.md`, `requirements.txt`
+
+## Dataset
+
+The volumes are the lecturer's NRRD files. They match the public Drive folder [1koJ83uaeMYdJt6AwvVlmMJk_wzczvmmG](https://drive.google.com/drive/folders/1koJ83uaeMYdJt6AwvVlmMJk_wzczvmmG). `croissant_1.nrrd` is that folder's `croissant.nrrd`.
+
+Spacing below is the length of each index axis in the NRRD `space directions`, in mm per voxel. Sampling does not apply that spacing.
+
+| File | Shape | dtype | Spacing x, y, z (mm) |
+|---|---|---|---|
+| MRHead_1.nrrd | 256×256×130 | int16 | 1, 1, 1.3 |
+| biscuit_cake.nrrd | 256×256×130 | uint16 | 1, 1, 1.3 |
+| croissant_1.nrrd | 500×500×500 | uint8 | 0.37, 0.37, 0.37 |
+| onion.nrrd | 256×256×130 | uint8 | 0.55, 0.55, 0.715 |
+| swiss_roll.nrrd | 256×256×130 | uint32 | 1.1, 1.1, 1.43 |
+
+MRHead's z vector length in the header is 1.29999542 mm. `csv/head.csv` (280 planes) and `csv/croissant.csv` (100 planes) are copies from the Drive folder, as is the 4-plane `csv/lecturer_example.csv`.
+
+## Experiment
+
+Times below are projection only. One run on Linux 6.12.94+ x86_64.
+
+`video/mrhead_planes.mp4` is this command (280 frames, 256×256, 25 fps, 3,230,424 bytes):
+
+```
+python Ex0.py data-NRRD/MRHead_1.nrrd csv/head.csv video/mrhead_planes.mp4
+volume (256, 256, 130) int16
+planes: 280, frames: 280, size: 256x256
+projection time: 0.529 s, 529.5 planes/s
+```
+
+Rows 1–220 are 256×256 rectangles (a sweep in z, then a 180° rotation). Rows 221–280 are triangles of 181×157, centred on that canvas. The run printed no leg warning.
+
+Croissant on the lecturer CSV. Every plane is 501×501; the MP4 canvas is 502×502 because both sides are rounded up to an even number. That MP4 is not stored in the repo.
+
+```
+python Ex0.py data-NRRD/croissant_1.nrrd csv/croissant.csv croissant.mp4
+volume (500, 500, 500) uint8
+planes: 100, frames: 100, size: 502x502
+projection time: 0.979 s, 102.1 planes/s
+```
+
+`python tests/benchmark.py` is a separate check: a synthetic 500³ volume, 100 projections, largest image 481×481. This run: 235.8 fps (must 30, target 100).
 
 ## Documents
-- `ALGORITHM.md`: detailed projection algorithm
-- `SRS.md`: software requirements
-- `tests/TESTING.md`: testing strategy
-- `video/`: demo CSVs and MP4 (`python Ex0.py data-NRRD/MRHead_1.nrrd video/planes_mrhead.csv video/mrhead_planes.mp4`)
 
-## Course
-Introduction to Software Engineering (OOP/OOD), Ariel University. Assignment Ex1.
+- [ALGORITHM.md](ALGORITHM.md) — projection
+- [SRS.md](SRS.md) — requirements
+- [tests/TESTING.md](tests/TESTING.md) — tests and how to run them
+- [video/README.md](video/README.md) — demo commands

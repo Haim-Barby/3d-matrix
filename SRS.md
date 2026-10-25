@@ -3,7 +3,7 @@
 
 **Course:** Introduction to Software Engineering (OOP/OOD), Ariel University
 **Assignment:** Ex1
-**Version:** 1.2
+**Version:** 1.3
 
 ---
 
@@ -38,9 +38,9 @@ Specify what the program must do: project a 3D volume (MRI-style raster data) on
 
 - **Form:** Command-line program, one run produces one MP4 file.
 - **User:** Student or grader running the demo.
-- **Environment:** Python 3, numpy, and pynrrd (the NRRD reader). OpenCV is not used in the algorithm. The demo video library (task #7) is still to be decided.
+- **Environment:** Python 3. numpy and pynrrd load the volume (`index_order='F'`). The projection does not parse NRRD itself. OpenCV (`cv2.VideoWriter`, fourcc `mp4v`, 25 fps) writes the MP4 only.
 - **Constraints:** 1 ≤ sx, sy, sz < 2^10. Each CSV row has 3 or 4 points.
-- **Assumptions:** CSV coordinates are voxel indices (IJK), as in M[x][y][z].
+- **Assumptions:** CSV coordinates are voxel indices (IJK), as in M[x][y][z]. Distances and pixels are in that index space: one pixel is one voxel step, not one millimetre. NRRD spacing is not applied.
 
 ---
 
@@ -51,7 +51,7 @@ Specify what the program must do: project a 3D volume (MRI-style raster data) on
 |---|---|
 | FR-1 | The program shall accept three arguments: `file.nrrd`, `file.csv`, `file.mp4`. |
 | FR-2 | The program shall load the volume from the NRRD file with pynrrd (`index_order='F'`), supporting 8, 16 and 32-bit unsigned voxels. |
-| FR-3 | The program shall read each CSV row as one plane of 3 or 4 points. |
+| FR-3 | The program shall read the lecturer CSV: a header line, optional `#` comments and blank lines, then one plane per row. The row starts with `3` (triangle `a, b, c`; unused fields may be empty) or `4` (trapezoid `a', b, a'', c`, mapped to PROJECT `a', a'', b, c`). Coordinates may be real and may lie outside the volume. |
 | FR-4 | The program shall accept a plane whose legs are not exactly equal, and shall warn if they differ by more than 1 voxel. It shall reject only a truly degenerate plane (zero base, zero height, collinear or coincident points), with an error naming the row, as ALGORITHM.md section 5 specifies. |
 | FR-5 | The program shall reject malformed NRRD or CSV input with an error naming the file and line, and exit with a non-zero code. |
 
@@ -65,8 +65,8 @@ Specify what the program must do: project a 3D volume (MRI-style raster data) on
 ### 3.3 Output
 | ID | Requirement |
 |---|---|
-| FR-9 | The program shall write one MP4 file with one frame per plane, in CSV row order. |
-| FR-10 | Each frame shall show image I. In the demo (video), frames are padded to a uniform canvas size so every MP4 frame has the same size. |
+| FR-9 | The program shall write one MP4 file with one frame per plane, in CSV row order, at 25 fps, using OpenCV fourcc `mp4v`. |
+| FR-10 | Each frame shall show image I, centred on one canvas. The canvas is the maximum frame width and height, rounded up so both sides are even. |
 
 ---
 
@@ -85,24 +85,31 @@ Specify what the program must do: project a 3D volume (MRI-style raster data) on
 
 ## 5. External Interfaces
 
-- **Command line:** `python Ex0.py file.nrrd file.csv file.mp4`
-  Note: the assignment writes `Ex0.py`, while the title says Ex1. To be confirmed with the instructor.
-- **NRRD input:** standard header fields `sizes`, `type`, `endian`, `encoding`.
-- **CSV input:** one plane per line, comma-separated coordinates (real values allowed), e.g. `10,20,30,50,20,30,30,60,30` for a triangle.
-- **MP4 output:** one frame per plane, in CSV order, padded to a uniform canvas size.
+- **Command line:** `python Ex0.py file.nrrd file.csv file.mp4` (the assignment's script name).
+- **NRRD input:** pynrrd, `index_order='F'`. Header fields `sizes`, `type`, `endian`, `encoding`.
+- **CSV input:** header `Number of Points (3 or 4),x1,y1,z1,...,x4,y4,z4`. A triangle row is `3,ax,ay,az,bx,by,bz,cx,cy,cz,,,`. A trapezoid row is `4` then `a', b, a'', c`. `#` comments, blank lines, and spaces are allowed.
+- **MP4 output:** one frame per plane, in CSV order, centred on one even canvas, 25 fps, `mp4v`.
 
 ---
 
-## 6. Open Items
+## 6. Decisions
 
-| # | Item | Status |
+These points are closed.
+
+| # | Item | Decision |
 |---|---|---|
-| 1 | Script name: `Ex0.py` in the assignment, `Ex1` in the title | Ask instructor |
-| 2 | Video encoding library for the demo (task #7) | Still to be decided |
+| 1 | Script name | `Ex0.py`, the name in the assignment command line |
+| 2 | Video library | OpenCV `VideoWriter`, fourcc `mp4v`, 25 fps |
+| 3 | Frame padding | Centred on one canvas; width and height rounded up to even |
+| 4 | CSV format | Lecturer header, a leading count of 3 or 4, empty trailing fields on triangles, `#` comments, blank lines |
+| 5 | Point order | Triangle `a, b, c`. Trapezoid `a', b, a'', c`, mapped to PROJECT(`a', a'', b, c`) |
+| 6 | Normalization | 1st and 99th percentiles of the volume, once. Not the minimum and maximum |
+| 7 | NRRD reader | pynrrd with `index_order='F'`. The program has no NRRD parser of its own |
+| 8 | Trapezoid | In scope. A triangle is the trapezoid with `a' = a'' = a` |
 
 ---
 
 ## 7. Related Documents
 - Algorithm details and edge-case handling: ALGORITHM.md.
-- Test strategy: tests/TESTING.md. The full test plan and test cases are still to be written.
-- Setup and usage: README.md.
+- Tests and how to run them: tests/TESTING.md.
+- Setup, dataset, and experiment results: README.md.
