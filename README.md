@@ -23,7 +23,7 @@ The algorithm is designed (ALGORITHM.md). Implementation is in progress. The vid
 - `ALGORITHM.md`: detailed projection algorithm
 - `SRS.md`: software requirements
 - `tests/TESTING.md`: testing strategy
-- `video/`: MP4 demo (`python video/Ex0.py file.nrrd file.csv file.mp4`)
+- `video/`: MP4 demo (`python video/Ex0.py data-NRRD/MRHead_1.nrrd video/planes_mrhead.csv video/mrhead_planes.mp4`)
 
 ## Course
 Introduction to Software Engineering (OOP/OOD), Ariel University. Assignment Ex1.
