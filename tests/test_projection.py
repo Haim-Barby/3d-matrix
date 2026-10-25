@@ -81,14 +81,16 @@ def test_tc02_sample_each_side_of_each_axis():
 
 
 def test_tc03_one_pixel_apex():
-    """TC-03. FR-6, NFR-1. h = 0.2 and base 0.4 both round to 0, so E is 1×1.
+    """TC-03. FR-2, FR-6, NFR-1. h = 0.2 and base 0.4 both round to 0, so E is 1×1.
 
     The only sample is the apex (0.2, 0.2, 0) → voxel (0, 0, 0).
+    The same image is checked for uint8 and uint32.
     """
-    M = np.zeros((2, 2, 2), dtype=np.uint8)
-    M[0, 0, 0] = 5
-    image = _both(M, (0.2, 0.2, 0), (0.2, 0.2, 0), (0, 0, 0), (0.4, 0, 0))
-    assert np.array_equal(image, [[5]])
+    for dtype in (np.uint8, np.uint32):
+        M = np.zeros((2, 2, 2), dtype=dtype)
+        M[0, 0, 0] = 5
+        image = _both(M, (0.2, 0.2, 0), (0.2, 0.2, 0), (0, 0, 0), (0.4, 0, 0))
+        assert np.array_equal(image, np.array([[5]], dtype=dtype))
 
 
 def test_tc04_axis_aligned_triangle_exact():
