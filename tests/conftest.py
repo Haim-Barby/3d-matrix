@@ -8,3 +8,10 @@ for directory in (ROOT, ROOT / "src"):
     entry = str(directory)
     if entry not in sys.path:
         sys.path.insert(0, entry)
+
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers",
+        "perf: timing sanity check; skip with -m 'not perf'",
+    )
