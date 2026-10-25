@@ -1,0 +1,11 @@
+Number of Points (3 or 4),x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4
+# Axial trapezoid at y=112. Top is anterior (z=8), base is posterior (z=122).
+4,16,112,8,16,112,122,240,112,8,240,112,122
+# Coronal trapezoid at x=140. Top is superior (y=30), base is inferior (y=230).
+4,140,30,8,140,230,8,140,30,122,140,230,122
+# Sagittal trapezoid at z=65. Top is superior (y=30), base is inferior (y=240).
+4,16,30,65,16,240,65,240,30,65,240,240,65
+# Oblique triangle through the upper head.
+3,80.8,123.7,124,70,210,25,190,195,105,,,
+# Coronal triangle at x=128. The base crosses z outside the volume.
+3,128,80,65,128,200,-10,128,200,140,,,

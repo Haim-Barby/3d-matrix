@@ -20,10 +20,10 @@ From the repo root:
 python Ex0.py file.nrrd file.csv file.mp4
 ```
 
-The experiment video (280 frames of MRHead):
+The experiment video (five MRHead planes, one second each):
 
 ```
-python Ex0.py data-NRRD/MRHead_1.nrrd csv/head.csv video/mrhead_planes.mp4
+python Ex0.py data-NRRD/MRHead_1.nrrd video/experiment.csv video/experiment.mp4
 ```
 
 Each CSV row is one plane. The file has a header `Number of Points (3 or 4),x1,y1,z1,...,x4,y4,z4`. A row starts with `3` (triangle `a, b, c`; the unused fourth point is empty) or `4` (trapezoid `a', b, a'', c`). `#` comments and blank lines are skipped. Coordinates are voxel indices. They may be fractional and may lie outside the volume.
@@ -36,7 +36,7 @@ The image is 1 voxel per pixel in index space. It is not scaled to millimetres. 
 - `src/projection.py`, `src/io_utils.py` — projection, NRRD load, CSV load
 - `data-NRRD/` — volumes
 - `csv/` — `head.csv`, `croissant.csv`, `lecturer_example.csv`
-- `video/` — `mrhead_planes.mp4` and the small demo CSVs
+- `video/` — `experiment.csv`, `experiment.mp4`, and a short write-up
 - `tests/` — pytest tests, `benchmark.py`, and the testing notes
 - `ALGORITHM.md`, `SRS.md`, `requirements.txt`
 
@@ -58,20 +58,18 @@ MRHead's z vector length in the header is 1.29999542 mm. `csv/head.csv` (280 pla
 
 ## Experiment
 
-Times below are projection only. One run on Linux 6.12.94+ x86_64.
-
-`video/mrhead_planes.mp4` is this command (280 frames, 256×256, 1 fps, 3,230,424 bytes):
+Times below are projection only. One run on Linux 6.12.94+ x86_64. The per-plane table is in [video/README.md](video/README.md).
 
 ```
-python Ex0.py data-NRRD/MRHead_1.nrrd csv/head.csv video/mrhead_planes.mp4
+python Ex0.py data-NRRD/MRHead_1.nrrd video/experiment.csv video/experiment.mp4
 volume (256, 256, 130) int16
-planes: 280, frames: 280, size: 256x256
-projection time: 0.529 s, 529.5 planes/s
+planes: 5, frames: 5, size: 226x212
+projection time: 0.006 s, 840.6 planes/s
 ```
 
-Rows 1–220 are 256×256 rectangles (a sweep in z, then a 180° rotation). Rows 221–280 are triangles of 181×157, centred on that canvas. The run printed no leg warning.
+Five planes, no leg warnings: axial, coronal, and sagittal trapezoids, one oblique triangle, and one coronal triangle whose base leaves the volume (that frame is partly black). The MP4 is 1 fps, so each plane is on screen for one second.
 
-Croissant on the lecturer CSV. Every plane is 501×501; the MP4 canvas is 502×502 because both sides are rounded up to an even number. That MP4 is not stored in the repo.
+Croissant on the lecturer CSV is a separate timing check. Every plane is 501×501; the MP4 canvas is 502×502 because both sides are rounded up to an even number. That MP4 is not stored in the repo.
 
 ```
 python Ex0.py data-NRRD/croissant_1.nrrd csv/croissant.csv croissant.mp4
@@ -87,4 +85,4 @@ projection time: 0.979 s, 102.1 planes/s
 - [ALGORITHM.md](ALGORITHM.md) — projection
 - [SRS.md](SRS.md) — requirements
 - [tests/TESTING.md](tests/TESTING.md) — tests and how to run them
-- [video/README.md](video/README.md) — demo commands
+- [video/README.md](video/README.md) — experiment video
