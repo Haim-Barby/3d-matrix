@@ -187,6 +187,8 @@ def _geometry(a_prime, a_second, b, c):
         raise ValueError("degenerate plane: coincident points")
     if _distance(bb, cc) <= _EPS:
         raise ValueError("degenerate plane: zero base (b = c)")
+    if _distance(ap, bb) <= _EPS or _distance(app, cc) <= _EPS:
+        raise ValueError("degenerate plane: zero leg")
     if _is_collinear(ap, app, bb, cc):
         raise ValueError("degenerate plane: collinear points")
 
@@ -201,6 +203,11 @@ def _geometry(a_prime, a_second, b, c):
     H = round_half_up(height) + 1
     W = round_half_up(max(w_top, w_base)) + 1
     return ap, app, bb, cc, H, W
+
+
+def check_plane(a_prime, a_second, b, c):
+    """Raise ValueError if the plane is degenerate (zero leg, zero height, ...)."""
+    _geometry(a_prime, a_second, b, c)
 
 
 def _warn_unequal_legs(ap, app, b, c):

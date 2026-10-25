@@ -42,7 +42,7 @@ def test_nrrd_rejects_bad_file_and_non_volume(tmp_path):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
         nrrd.write(str(flat_path), flat, index_order="F")
-    with pytest.raises(AssertionError, match="3D"):
+    with pytest.raises(ValueError, match="3D"):
         load_nrrd(flat_path)
 
 
@@ -121,7 +121,13 @@ def test_plane_project_matches_module_function():
 def test_plane_from_csv_names_the_row_when_degenerate(tmp_path):
     path = tmp_path / "flat.csv"
     path.write_text("0,0,0, 0,0,0, 0,0,0\n", encoding="utf-8")
-    plane = load_planes(path)[0]
-    volume = np.zeros((2, 2, 2), dtype=np.uint8)
-    with pytest.raises(ValueError, match=r"line 1:.*coincident"):
-        plane.project(volume)
+    with pytest.raises(ValueError, match=r"flat\.csv: line 1:.*coincident"):
+        load_planes(path)
+
+    path.write_text("0,5,0, 0,5,0, 4,0,0\n", encoding="utf-8")
+    with pytest.raises(ValueError, match=r"flat\.csv: line 1:.*zero leg"):
+        load_planes(path)
+
+    path.write_text("0,0,0, 2,1,0, 0,1,0, 2,0,0\n", encoding="utf-8")
+    with pytest.raises(ValueError, match=r"flat\.csv: line 1:.*zero height"):
+        load_planes(path)

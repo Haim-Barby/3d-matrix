@@ -1,10 +1,10 @@
 """Project an NRRD volume onto CSV planes and write an MP4.
 
-Usage: python video/Ex0.py file.nrrd file.csv file.mp4
+Usage: python Ex0.py file.nrrd file.csv file.mp4
 
 Each row is one plane, in order: 9 numbers for a triangle (a, b, c) or 12 for
 a trapezoid (a', a'', b, c). The projection and the grayscale window come from
-src/ (ALGORITHM.md), not from a second copy of the algorithm.
+src/ (ALGORITHM.md).
 """
 
 import sys
@@ -14,30 +14,35 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
 from io_utils import load_nrrd, load_planes
 from projection import project, to_image, window
 
+USAGE = "usage: python Ex0.py file.nrrd file.csv file.mp4"
+
 
 def main():
     if len(sys.argv) != 4:
-        sys.exit("usage: python video/Ex0.py file.nrrd file.csv file.mp4")
+        sys.exit(USAGE)
     nrrd_path, csv_path, mp4_path = sys.argv[1:]
 
     try:
         volume = load_nrrd(nrrd_path)
         planes = load_planes(csv_path)
-    except (OSError, ValueError, AssertionError) as exc:
+    except (OSError, ValueError) as exc:
         sys.exit(str(exc))
     if not planes:
         sys.exit(f"{csv_path}: no planes")
 
     started = time.perf_counter()
+    raw = []
     try:
-        raw = [project(volume, *plane.corners()) for plane in planes]
+        for plane in planes:
+            raw.append(project(volume, *plane.corners()))
     except ValueError as exc:
-        sys.exit(str(exc))
+        line = plane.line if plane.line is not None else "?"
+        sys.exit(f"{csv_path}: line {line}: {exc}")
     elapsed = time.perf_counter() - started
 
     # One window for the whole volume (1st and 99th percentiles).

@@ -6,15 +6,15 @@ and matches the header ``sizes`` (ALGORITHM.md issue 7).
 CSV: one plane per line, comma-separated voxel coordinates. A triangle is
 9 numbers ``ax,ay,az,bx,by,bz,cx,cy,cz`` (apex, then the two base vertices).
 A trapezoid is 12 numbers ``a'x,a'y,a'z,a''x,a''y,a''z,bx,by,bz,cx,cy,cz``
-(top-left, top-right, base-left, base-right). This is the layout in SRS.md;
-``data-NRRD/`` has volumes only, no sample CSV.
+(top-left, top-right, base-left, base-right). This is the layout in SRS.md.
+Sample CSVs live in ``video/``.
 """
 
 import numpy as np
 import nrrd
 from nrrd.errors import NRRDError
 
-from projection import project, project_reference
+from projection import check_plane, project, project_reference
 
 
 class Plane:
@@ -75,16 +75,20 @@ def load_nrrd(path):
     """
     try:
         data, header = nrrd.read(str(path), index_order="F")
+    except FileNotFoundError:
+        raise ValueError(f"{path}: cannot read NRRD file") from None
+    except OSError as exc:
+        raise ValueError(f"{path}: cannot read NRRD file ({exc})") from exc
     except NRRDError as exc:
         raise ValueError(f"{path}: invalid NRRD ({exc})") from exc
 
-    assert data.ndim == 3, (
-        f"{path}: expected a 3D volume, got shape {data.shape}"
-    )
+    if getattr(data, "ndim", None) != 3:
+        raise ValueError(f"{path}: expected a 3D volume, got shape {data.shape}")
     sizes = tuple(int(v) for v in header["sizes"])
-    assert data.shape == sizes, (
-        f"{path}: array shape {data.shape} does not match header sizes {sizes}"
-    )
+    if tuple(data.shape) != sizes:
+        raise ValueError(
+            f"{path}: array shape {data.shape} does not match header sizes {sizes}"
+        )
     return data
 
 
@@ -93,12 +97,24 @@ def load_planes(path):
 
     A bad line raises ``ValueError`` naming the file and the 1-based line.
     """
+    try:
+        handle = open(path, "r", encoding="utf-8")
+    except FileNotFoundError:
+        raise ValueError(f"{path}: cannot read CSV file") from None
+    except OSError as exc:
+        raise ValueError(f"{path}: cannot read CSV file ({exc})") from exc
+
     planes = []
-    with open(path, "r", encoding="utf-8") as handle:
+    with handle:
         for line_no, line in enumerate(handle, start=1):
             if line.strip() == "":
                 continue
-            planes.append(_parse_plane_line(line, line_no, path))
+            plane = _parse_plane_line(line, line_no, path)
+            try:
+                check_plane(*plane.corners())
+            except ValueError as exc:
+                raise ValueError(f"{path}: line {line_no}: {exc}") from exc
+            planes.append(plane)
     return planes
 
 
