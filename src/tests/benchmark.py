@@ -3,7 +3,7 @@
 Projection only: the volume is already in memory, and nothing is encoded.
 This file is not a pytest test. Run it directly:
 
-    python tests/benchmark.py
+    python src/tests/benchmark.py
 
 Must be at least 30 frames per second. The target is 100.
 """
