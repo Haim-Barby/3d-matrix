@@ -14,7 +14,7 @@ Output: grayscale MP4 (OpenCV `mp4v`, 1 fps, so each plane stays on screen for o
 
 ## Experiment
 
-Goal: five cuts through `data-NRRD/MRHead_1.nrrd` that are easy to tell apart. Three are orthogonal trapezoids (axial, coronal, sagittal). One is an oblique triangle. One coronal triangle leaves the volume.
+Goal: five cuts through `data-NRRD/MRHead_1.nrrd` that are easy to tell apart. Three are orthogonal trapezoids (axial, coronal, sagittal). One is an oblique triangle. One coronal trapezoid runs past the side of the volume.
 
 ```
 python Ex0.py data-NRRD/MRHead_1.nrrd video/experiment.csv video/experiment.mp4
@@ -26,6 +26,6 @@ python Ex0.py data-NRRD/MRHead_1.nrrd video/experiment.csv video/experiment.mp4
 | 2 | trapezoid | coronal, x=140 | 115×201 | coronal slice, top of the head up |
 | 3 | trapezoid | sagittal, z=65 | 225×211 | sagittal profile, face to one side |
 | 4 | triangle | oblique | 146×111 | oblique cut through the upper head |
-| 5 | triangle | coronal, x=128 | 151×121 | brain, with black where the base leaves the volume |
+| 5 | trapezoid | coronal, x=128 | 225×181 | coronal slice, top of the head up; the right side is black past the volume |
 
-The run printed no leg warnings. Projection took 0.006 s (840.6 planes/s). The file has 5 frames at 1 fps on a 226×212 canvas. Frames 1–4 are tissue; the black around the smaller ones is the shared canvas. Frame 5 is the outside case: 9022 of its 18271 pixels are nonzero, and the part of the base with z < 0 is black.
+The run printed no leg warnings. Projection took 0.006 s (784.1 planes/s), writing 5 frames at 1 fps on a 226×212 canvas. Frames 1–4 are tissue; the black around the smaller ones is the shared canvas. Frame 5 is 225×181 with 22029 nonzero pixels: z runs from 8 to 232, and columns 122–224 (past z=129) are black.

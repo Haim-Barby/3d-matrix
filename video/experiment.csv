@@ -7,5 +7,5 @@ Number of Points (3 or 4),x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4
 4,16,30,65,16,240,65,240,30,65,240,240,65
 # Oblique triangle through the upper head.
 3,80.8,123.7,124,70,210,25,190,195,105,,,
-# Coronal triangle at x=128. The base crosses z outside the volume.
-3,128,80,65,128,200,-10,128,200,140,,,
+# Coronal trapezoid at x=128. z runs 8..232; the volume ends at 129, so the right side is outside.
+4,128,40,8,128,220,8,128,40,232,128,220,232
