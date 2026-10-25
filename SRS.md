@@ -38,7 +38,7 @@ Specify what the program must do: project a 3D volume (MRI-style raster data) on
 
 - **Form:** Command-line program, one run produces one MP4 file.
 - **User:** Student or grader running the demo.
-- **Environment:** Python 3. numpy and pynrrd load the volume (`index_order='F'`). The projection does not parse NRRD itself. OpenCV (`cv2.VideoWriter`, fourcc `mp4v`, 25 fps) writes the MP4 only.
+- **Environment:** Python 3. numpy and pynrrd load the volume (`index_order='F'`). The projection does not parse NRRD itself. OpenCV (`cv2.VideoWriter`, fourcc `mp4v`, 1 fps) writes the MP4 only.
 - **Constraints:** 1 ≤ sx, sy, sz < 2^10. Each CSV row has 3 or 4 points.
 - **Assumptions:** CSV coordinates are voxel indices (IJK), as in M[x][y][z]. Distances and pixels are in that index space: one pixel is one voxel step, not one millimetre. NRRD spacing is not applied.
 
@@ -65,7 +65,7 @@ Specify what the program must do: project a 3D volume (MRI-style raster data) on
 ### 3.3 Output
 | ID | Requirement |
 |---|---|
-| FR-9 | The program shall write one MP4 file with one frame per plane, in CSV row order, at 25 fps, using OpenCV fourcc `mp4v`. |
+| FR-9 | The program shall write one MP4 file with one frame per plane, in CSV row order, at 1 fps, using OpenCV fourcc `mp4v`. |
 | FR-10 | Each frame shall show image I, centred on one canvas. The canvas is the maximum frame width and height, rounded up so both sides are even. |
 
 ---
@@ -88,7 +88,7 @@ Specify what the program must do: project a 3D volume (MRI-style raster data) on
 - **Command line:** `python Ex0.py file.nrrd file.csv file.mp4` (the assignment's script name).
 - **NRRD input:** pynrrd, `index_order='F'`. Header fields `sizes`, `type`, `endian`, `encoding`.
 - **CSV input:** header `Number of Points (3 or 4),x1,y1,z1,...,x4,y4,z4`. A triangle row is `3,ax,ay,az,bx,by,bz,cx,cy,cz,,,`. A trapezoid row is `4` then `a', b, a'', c`. `#` comments, blank lines, and spaces are allowed.
-- **MP4 output:** one frame per plane, in CSV order, centred on one even canvas, 25 fps, `mp4v`.
+- **MP4 output:** one frame per plane, in CSV order, centred on one even canvas, 1 fps, `mp4v`.
 
 ---
 
@@ -99,7 +99,7 @@ These points are closed.
 | # | Item | Decision |
 |---|---|---|
 | 1 | Script name | `Ex0.py`, the name in the assignment command line |
-| 2 | Video library | OpenCV `VideoWriter`, fourcc `mp4v`, 25 fps |
+| 2 | Video library | OpenCV `VideoWriter`, fourcc `mp4v`, 1 fps |
 | 3 | Frame padding | Centred on one canvas; width and height rounded up to even |
 | 4 | CSV format | Lecturer header, a leading count of 3 or 4, empty trailing fields on triangles, `#` comments, blank lines |
 | 5 | Point order | Triangle `a, b, c`. Trapezoid `a', b, a'', c`, mapped to PROJECT(`a', a'', b, c`) |

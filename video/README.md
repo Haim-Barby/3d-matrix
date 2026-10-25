@@ -10,7 +10,7 @@ Example: `python Ex0.py data-NRRD/MRHead_1.nrrd csv/head.csv video/mrhead_planes
 
 CSV: lecturer format. Header `Number of Points (3 or 4),x1,y1,z1,...,x4,y4,z4`. A triangle row starts with `3` and is `a, b, c` (trailing fields empty). A trapezoid row starts with `4` and is `a', b, a'', c`. `#` comments and blank lines are skipped.
 
-Output: grayscale MP4 (OpenCV `mp4v`, 25 fps). Frames are centred on one canvas; width and height are rounded up to even numbers. `video/mrhead_planes.mp4` is `csv/head.csv` through `MRHead_1.nrrd` (280 frames). The smaller demo CSVs in this folder use the same format.
+Output: grayscale MP4 (OpenCV `mp4v`, 1 fps). Frames are centred on one canvas; width and height are rounded up to even numbers. `video/mrhead_planes.mp4` is `csv/head.csv` through `MRHead_1.nrrd` (280 frames). The smaller demo CSVs in this folder use the same format.
 
 ## Demo
 

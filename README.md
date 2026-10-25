@@ -28,7 +28,7 @@ python Ex0.py data-NRRD/MRHead_1.nrrd csv/head.csv video/mrhead_planes.mp4
 
 Each CSV row is one plane. The file has a header `Number of Points (3 or 4),x1,y1,z1,...,x4,y4,z4`. A row starts with `3` (triangle `a, b, c`; the unused fourth point is empty) or `4` (trapezoid `a', b, a'', c`). `#` comments and blank lines are skipped. Coordinates are voxel indices. They may be fractional and may lie outside the volume.
 
-The image is 1 voxel per pixel in index space. It is not scaled to millimetres. Gray values use one window for the volume: the 1st and 99th percentiles. Frames are centred on a single canvas whose sides are even. The MP4 is OpenCV `mp4v` at 25 fps.
+The image is 1 voxel per pixel in index space. It is not scaled to millimetres. Gray values use one window for the volume: the 1st and 99th percentiles. Frames are centred on a single canvas whose sides are even. The MP4 is OpenCV `mp4v` at 1 fps.
 
 ## Layout
 
@@ -60,7 +60,7 @@ MRHead's z vector length in the header is 1.29999542 mm. `csv/head.csv` (280 pla
 
 Times below are projection only. One run on Linux 6.12.94+ x86_64.
 
-`video/mrhead_planes.mp4` is this command (280 frames, 256×256, 25 fps, 3,230,424 bytes):
+`video/mrhead_planes.mp4` is this command (280 frames, 256×256, 1 fps, 3,230,424 bytes):
 
 ```
 python Ex0.py data-NRRD/MRHead_1.nrrd csv/head.csv video/mrhead_planes.mp4

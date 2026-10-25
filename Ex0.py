@@ -56,7 +56,7 @@ def main():
     width += width % 2
 
     writer = cv2.VideoWriter(
-        mp4_path, cv2.VideoWriter_fourcc(*"mp4v"), 25, (width, height)
+        mp4_path, cv2.VideoWriter_fourcc(*"mp4v"), 1, (width, height)
     )
     if not writer.isOpened():
         sys.exit(f"cannot open {mp4_path} for writing")

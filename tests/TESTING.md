@@ -58,7 +58,7 @@ Preconditions for all rows: repo root, dependencies installed. Steps: `pytest` f
 | TC-24 | lecturer_example.csv row 4 | FR-3, FR-4 | `csv/lecturer_example.csv` | 4 planes; equal legs, parallel sides, no warning |
 | TC-25 | head.csv plane count | FR-3 | `csv/head.csv` | 280 planes, file lines 2–281, 60 triangles |
 | TC-26 | Plane.project | FR-6 | 8×8×4, apex voxel 9 | matches the reference; centre pixel is 9 |
-| TC-27 | Ex0 frame count | FR-1, FR-9, FR-10 | tiny NRRD, two CSV rows | 2 frames, 25 fps, fourcc read back as FMP4, even canvas, no traceback |
+| TC-27 | Ex0 frame count | FR-1, FR-9, FR-10 | tiny NRRD, two CSV rows | 2 frames, 1 fps, fourcc read back as FMP4, even canvas, no traceback |
 | TC-28 | Ex0 bad row | FR-5 | second row has count 1 | non-zero exit, message contains line 2, no MP4 |
 | TC-29 | Ex0 usage and missing file | FR-1, FR-5 | one argument; missing NRRD | usage line; message names the path; no traceback |
 | TC-30 | Ex0 centres the small frame | FR-10 | 8×8 canvas, then a 1×1 plane | the only bright pixel is at (3, 3), not the corner |

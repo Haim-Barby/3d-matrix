@@ -45,7 +45,7 @@ def _frame_count(path):
 
 
 def test_tc27_ex0_one_frame_per_row(tmp_path):
-    """TC-27. FR-1, FR-9, FR-10. One frame per row, 25 fps, mp4v, even canvas."""
+    """TC-27. FR-1, FR-9, FR-10. One frame per row, 1 fps, mp4v, even canvas."""
     nrrd_path = tmp_path / "tiny.nrrd"
     csv_path = tmp_path / "planes.csv"
     mp4_path = tmp_path / "out.mp4"
@@ -65,7 +65,7 @@ def test_tc27_ex0_one_frame_per_row(tmp_path):
     assert read == 2
     assert "frames: 2" in result.stdout
     capture = cv2.VideoCapture(str(mp4_path))
-    assert capture.get(cv2.CAP_PROP_FPS) == 25
+    assert capture.get(cv2.CAP_PROP_FPS) == 1
     width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
     assert width % 2 == 0 and height % 2 == 0
