@@ -20,7 +20,7 @@ From the repo root:
 python Ex0.py file.nrrd file.csv file.mp4
 ```
 
-The experiment video (five MRHead planes, one second each):
+The experiment video (six MRHead planes, one second each):
 
 ```
 python Ex0.py data-NRRD/MRHead_1.nrrd video/experiment.csv video/experiment.mp4
@@ -63,11 +63,11 @@ Times below are projection only. One run on Linux 6.12.94+ x86_64. The per-plane
 ```
 python Ex0.py data-NRRD/MRHead_1.nrrd video/experiment.csv video/experiment.mp4
 volume (256, 256, 130) int16
-planes: 5, frames: 5, size: 226x212
-projection time: 0.006 s, 784.1 planes/s
+planes: 6, frames: 6, size: 172x162
+projection time: 0.005 s, 1132.5 planes/s
 ```
 
-Five planes, no leg warnings: axial, coronal, and sagittal trapezoids, one oblique triangle, and one coronal trapezoid whose right side runs past z=129 (that part of the frame is black). The MP4 is 1 fps, so each plane is on screen for one second.
+Six planes, no leg warnings: three isosceles triangles and three isosceles trapezoids (short side 40–42% of the long side). One coronal trapezoid runs past z=129, so that side of the frame is black. The MP4 is 1 fps, so each plane is on screen for one second.
 
 Croissant on the lecturer CSV is a separate timing check. Every plane is 501×501; the MP4 canvas is 502×502 because both sides are rounded up to an even number. That MP4 is not stored in the repo.
 

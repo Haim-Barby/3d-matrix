@@ -1,11 +1,13 @@
 Number of Points (3 or 4),x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4
-# Axial trapezoid at y=112. Top is anterior (z=8), base is posterior (z=122).
-4,16,112,8,16,112,122,240,112,8,240,112,122
-# Coronal trapezoid at x=140. Top is superior (y=30), base is inferior (y=230).
-4,140,30,8,140,230,8,140,30,122,140,230,122
-# Sagittal trapezoid at z=65. Top is superior (y=30), base is inferior (y=240).
-4,16,30,65,16,240,65,240,30,65,240,240,65
-# Oblique triangle through the upper head.
-3,80.8,123.7,124,70,210,25,190,195,105,,,
-# Coronal trapezoid at x=128. z runs 8..232; the volume ends at 129, so the right side is outside.
-4,128,40,8,128,220,8,128,40,232,128,220,232
+# Axial triangle at y=120. Apex toward one side, base along x.
+3,135,120,112,55,120,28,215,120,28,,,
+# Coronal trapezoid at x=145. Short side is superior; short/long = 0.42.
+4,145,60,41.06,145,215,8,145,60,88.94,145,215,122
+# Sagittal triangle at z=65. Apex is superior, base is inferior.
+3,130,70,65,45,210,65,215,210,65,,,
+# Axial trapezoid at y=118. Short/long = 0.40.
+4,105,118,105,60,118,30,165,118,105,210,118,30
+# Oblique triangle through the head.
+3,125,45,77.0455,50,205,35,210,205,90,,,
+# Coronal trapezoid at x=140. The long base runs past z=129. Short/long = 0.40.
+4,140,60,63,140,220,15,140,60,127,140,220,175

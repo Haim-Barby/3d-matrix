@@ -14,7 +14,7 @@ Output: grayscale MP4 (OpenCV `mp4v`, 1 fps, so each plane stays on screen for o
 
 ## Experiment
 
-Goal: five cuts through `data-NRRD/MRHead_1.nrrd` that are easy to tell apart. Three are orthogonal trapezoids (axial, coronal, sagittal). One is an oblique triangle. One coronal trapezoid runs past the side of the volume.
+Goal: six large isosceles cuts through `data-NRRD/MRHead_1.nrrd`. Three triangles and three trapezoids, with the short side 40–42% of the long side. One coronal trapezoid runs past the volume.
 
 ```
 python Ex0.py data-NRRD/MRHead_1.nrrd video/experiment.csv video/experiment.mp4
@@ -22,10 +22,11 @@ python Ex0.py data-NRRD/MRHead_1.nrrd video/experiment.csv video/experiment.mp4
 
 | Frame | Shape | Orientation | Image | Visible |
 |---|---|---|---|---|
-| 1 | trapezoid | axial, y=112 | 225×115 | axial slice: skull, brain, orbits |
-| 2 | trapezoid | coronal, x=140 | 115×201 | coronal slice, top of the head up |
-| 3 | trapezoid | sagittal, z=65 | 225×211 | sagittal profile, face to one side |
-| 4 | triangle | oblique | 146×111 | oblique cut through the upper head |
-| 5 | trapezoid | coronal, x=128 | 225×181 | coronal slice, top of the head up; the right side is black past the volume |
+| 1 | triangle | axial, y=120 | 161×85 | axial brain; apex on top, base along the bottom |
+| 2 | trapezoid | coronal, x=145 | 115×156 | coronal face, top of the head up; short side is 42% of the base |
+| 3 | triangle | sagittal, z=65 | 171×141 | sagittal profile; apex on top |
+| 4 | trapezoid | axial, y=118 | 151×76 | axial brain; short side is 40% of the base |
+| 5 | triangle | oblique | 170×162 | oblique cut of the head; apex on top |
+| 6 | trapezoid | coronal, x=140 | 161×161 | coronal face; the long base runs past z=129 |
 
-The run printed no leg warnings. Projection took 0.006 s (784.1 planes/s), writing 5 frames at 1 fps on a 226×212 canvas. Frames 1–4 are tissue; the black around the smaller ones is the shared canvas. Frame 5 is 225×181 with 22029 nonzero pixels: z runs from 8 to 232, and columns 122–224 (past z=129) are black.
+The run printed no leg warnings. Projection took 0.005 s (1132.5 planes/s), writing 6 frames at 1 fps on a 172×162 canvas. Nonzero row widths narrow toward the top: 1→161, 49→115, 1→171, 61→151, 1→170, and 65→115. Frame 6 is 161×161 with 14618 nonzero pixels; its base stays at width 115 because z runs past 129.
