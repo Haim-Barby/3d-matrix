@@ -8,6 +8,7 @@ import nrrd
 import pytest
 
 from io_utils import Plane, load_nrrd, load_planes
+from projection import project
 
 
 def test_tc16_nrrd_uint16_axis_order(tmp_path):
@@ -47,6 +48,31 @@ def test_tc17_nrrd_uint8_and_uint32(tmp_path):
         assert loaded.shape == (2, 2, 2)
         assert loaded[1, 1, 1] == 7
         assert np.array_equal(loaded, volume)
+
+
+def test_tc31_int16_negative_voxel(tmp_path):
+    """TC-31. FR-2, FR-7. A negative int16 voxel survives load and projection.
+
+    The base of the triangle is at y=3, outside a volume of size 2, so those
+    samples are 0. The apex is the negative voxel.
+    """
+    volume = np.zeros((2, 2, 2), dtype=np.int16)
+    volume[0, 0, 0] = -4
+    path = tmp_path / "signed.nrrd"
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        nrrd.write(str(path), volume, index_order="F")
+
+    loaded = load_nrrd(path)
+    assert loaded.dtype == np.int16
+    assert loaded[0, 0, 0] == -4
+    assert np.array_equal(loaded, volume)
+
+    image = project(loaded, (0, 0, 0), (0, 0, 0), (-1, 3, 0), (1, 3, 0))
+    assert image.dtype == np.int16
+    assert image.shape == (4, 3)
+    assert image[0, 1] == -4
+    assert np.array_equal(image[3], [0, 0, 0])
 
 
 def test_tc18_bad_nrrd_names_the_file(tmp_path):

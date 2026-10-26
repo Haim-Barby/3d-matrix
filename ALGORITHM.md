@@ -15,7 +15,7 @@ video, and MP4 encoding (these belong to the demo, To Do #7).
 ## 1. Inputs, outputs and conventions
 
 **Volume `M`**
-- A 3D array of unsigned integers (8, 16 or 32 bit) of size `sx × sy × sz`,
+- A 3D array of 8, 16 or 32-bit integers, unsigned or signed, of size `sx × sy × sz`,
   `1 ≤ sx, sy, sz < 1024`.
 - Accessed as `M[x, y, z]` with `0 ≤ x < sx`, `0 ≤ y < sy`, `0 ≤ z < sz`.
 - Loaded from NRRD with `pynrrd` using `index_order='F'`, so the array indices match

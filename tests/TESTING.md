@@ -12,7 +12,7 @@ Spec: [SRS.md](../SRS.md) and [ALGORITHM.md](../ALGORITHM.md). This run: 2026-10
 |---|---|---|
 | Unit | One image, or one rounding rule, on a volume of a few voxels | TC-01–TC-12 |
 | Unit, scaled | The same invariants on N = 8, 32, 128, 256 | TC-13, TC-14 |
-| Integration | NRRD round-trip, lecturer CSV, `Plane` with `PROJECT` | TC-16–TC-26, and the CSV half of TC-05 |
+| Integration | NRRD round-trip, lecturer CSV, `Plane` with `PROJECT` | TC-16–TC-26, TC-31, and the CSV half of TC-05 |
 | System | `python Ex0.py file.nrrd file.csv file.mp4` | TC-27–TC-30 |
 | Acceptance | Frames per second on a 500³ volume. Not part of pytest | TC-15 |
 
@@ -28,7 +28,7 @@ Spec: [SRS.md](../SRS.md) and [ALGORITHM.md](../ALGORITHM.md). This run: 2026-10
 
 ## 2. Test cases (STD)
 
-Preconditions for all rows: repo root, dependencies installed. Steps: `pytest` for TC-01–TC-14 and TC-16–TC-30, `python tests/benchmark.py` for TC-15. Result of this run: pass.
+Preconditions for all rows: repo root, dependencies installed. Steps: `pytest` for TC-01–TC-14 and TC-16–TC-31, `python tests/benchmark.py` for TC-15. Result of this run: pass.
 
 | ID | Title | Verifies | Input | Expected |
 |---|---|---|---|---|
@@ -62,18 +62,19 @@ Preconditions for all rows: repo root, dependencies installed. Steps: `pytest` f
 | TC-28 | Ex0 bad row | FR-5 | second row has count 1 | non-zero exit, message contains line 2, no MP4 |
 | TC-29 | Ex0 usage and missing file | FR-1, FR-5 | one argument; missing NRRD | usage line; message names the path; no traceback |
 | TC-30 | Ex0 centres the small frame | FR-10 | 8×8 canvas, then a 1×1 plane | the only bright pixel is at (3, 3), not the corner |
+| TC-31 | NRRD int16 negative voxel | FR-2, FR-7 | 2×2×2 int16, M[0,0,0] = −4; base at y=3 | dtype stays int16; apex sample is −4; the outside base row is 0 |
 
 ## 3. Traceability
 
 | Requirement | Cases | Test function |
 |---|---|---|
 | FR-1 | TC-27, TC-29 | `test_tc27_ex0_one_frame_per_row`, `test_tc29_missing_file_and_usage` |
-| FR-2 | TC-03, TC-16, TC-17 | `test_tc03_one_pixel_apex`, `test_tc16_nrrd_uint16_axis_order`, `test_tc17_nrrd_uint8_and_uint32` |
+| FR-2 | TC-03, TC-16, TC-17, TC-31 | `test_tc03_one_pixel_apex`, `test_tc16_nrrd_uint16_axis_order`, `test_tc17_nrrd_uint8_and_uint32`, `test_tc31_int16_negative_voxel` |
 | FR-3 | TC-05, TC-19, TC-20, TC-22, TC-24, TC-25 | `test_tc05_trapezoid_lecturer_order_exact`, `test_tc19_csv_triangle_and_trapezoid`, `test_tc20_csv_header_comments_blanks`, `test_tc22_csv_count_mismatch`, `test_tc24_lecturer_example_row4`, `test_tc25_head_csv_has_280_planes` |
 | FR-4 | TC-10, TC-11, TC-23, TC-24 | `test_tc10_leg_warning_threshold`, `test_tc11_degenerate_planes_are_rejected`, `test_tc23_degenerate_csv_names_the_line`, `test_tc24_lecturer_example_row4` |
 | FR-5 | TC-18, TC-21, TC-22, TC-23, TC-28, TC-29 | `test_tc18_bad_nrrd_names_the_file`, `test_tc21_csv_bad_values_name_the_line`, `test_tc22_csv_count_mismatch`, `test_tc23_degenerate_csv_names_the_line`, `test_tc28_bad_row_exits`, `test_tc29_missing_file_and_usage` |
 | FR-6 | TC-03–TC-07, TC-12, TC-13, TC-26 | `test_tc03_one_pixel_apex`, `test_tc04_axis_aligned_triangle_exact`, `test_tc05_trapezoid_lecturer_order_exact`, `test_tc06_height_and_fencepost_on_the_wide_triangle`, `test_tc07_non_integer_base_reaches_both_ends`, `test_tc12_window_and_to_image`, `test_tc13_invariants_hold_as_n_grows`, `test_tc26_plane_project_matches` |
-| FR-7 | TC-02, TC-04, TC-08, TC-09, TC-13 | `test_tc02_sample_each_side_of_each_axis`, `test_tc04_axis_aligned_triangle_exact`, `test_tc08_plane_outside_is_all_zero`, `test_tc09_partial_plane_exact`, `test_tc13_invariants_hold_as_n_grows` |
+| FR-7 | TC-02, TC-04, TC-08, TC-09, TC-13, TC-31 | `test_tc02_sample_each_side_of_each_axis`, `test_tc04_axis_aligned_triangle_exact`, `test_tc08_plane_outside_is_all_zero`, `test_tc09_partial_plane_exact`, `test_tc13_invariants_hold_as_n_grows`, `test_tc31_int16_negative_voxel` |
 | FR-8 | TC-01, TC-02, TC-07 | `test_tc01_round_halves_up`, `test_tc02_sample_each_side_of_each_axis`, `test_tc07_non_integer_base_reaches_both_ends` |
 | FR-9 | TC-27 | `test_tc27_ex0_one_frame_per_row` |
 | FR-10 | TC-27, TC-30 | `test_tc27_ex0_one_frame_per_row`, `test_tc30_smaller_frame_is_centred` |
@@ -99,7 +100,7 @@ python tests/benchmark.py
 
 ## 5. Measured results
 
-`pytest`: **32 passed in 0.92 s**.
+`pytest`: **33 passed in 0.93 s**.
 
 `python tests/benchmark.py`, projection only:
 

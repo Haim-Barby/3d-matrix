@@ -25,7 +25,7 @@ Specify what the program must do: project a 3D volume (MRI-style raster data) on
 ### 1.3 Definitions
 | Term | Meaning |
 |---|---|
-| Volume M | 3D array of size sx × sy × sz, unsigned integer voxels of 8, 16 or 32 bits |
+| Volume M | 3D array of size sx × sy × sz. Voxels are 8, 16 or 32-bit integers, unsigned or signed (MRHead_1.nrrd is int16) |
 | Voxel | One cell of M, addressed by integer indices (x, y, z) |
 | Plane | 3 points (triangle) or 4 points (trapezoid). Legs are nominally equal. A triangle is the trapezoid with a' = a'' = a |
 | Projection E | Raw 2D samples for one plane, shape (H, W), same dtype as M |
@@ -50,7 +50,7 @@ Specify what the program must do: project a 3D volume (MRI-style raster data) on
 | ID | Requirement |
 |---|---|
 | FR-1 | The program shall accept three arguments: `file.nrrd`, `file.csv`, `file.mp4`. |
-| FR-2 | The program shall load the volume from the NRRD file with pynrrd (`index_order='F'`), supporting 8, 16 and 32-bit unsigned voxels. |
+| FR-2 | The program shall load the volume from the NRRD file with pynrrd (`index_order='F'`). Voxels may be 8, 16 or 32-bit integers, unsigned or signed (MRHead_1.nrrd is int16). The loader rejects a file it cannot read, an invalid NRRD, a volume that is not 3D, and an array whose shape does not match the header sizes. |
 | FR-3 | The program shall read the lecturer CSV: a header line, optional `#` comments and blank lines, then one plane per row. The row starts with `3` (triangle `a, b, c`; unused fields may be empty) or `4` (trapezoid `a', b, a'', c`, mapped to PROJECT `a', a'', b, c`). Coordinates may be real and may lie outside the volume. |
 | FR-4 | The program shall accept a plane whose legs are not exactly equal, and shall warn if they differ by more than 1 voxel. It shall reject only a truly degenerate plane (zero base, zero height, collinear or coincident points), with an error naming the row, as ALGORITHM.md section 5 specifies. |
 | FR-5 | The program shall reject malformed NRRD or CSV input with an error naming the file and line, and exit with a non-zero code. |
