@@ -4,6 +4,18 @@ Project a 3D NRRD volume onto planes from a CSV file and write one MP4 frame per
 
 Course: Introduction to Software Engineering (OOP/OOD), Ariel University, assignment Ex1. The program is `Ex0.py`.
 
+## Problem
+
+The program projects a 3D NRRD volume onto a plane. The plane is an isosceles triangle or an isosceles trapezoid. Each projection is a 2D image.
+
+## Scope
+
+**In scope:** read a 3D NRRD volume, read planes from a CSV file (3 or 4 points per row), compute one 2D image per plane, and write those images as MP4 frames in CSV order.
+
+**Out of scope:** a GUI, editing the volume, and formats other than NRRD.
+
+**Assumptions:** CSV coordinates are voxel indices. One pixel is one voxel step, not one millimetre, so NRRD spacing is not applied. Each volume side is at least 1 and below 1024.
+
 ## Install
 
 ```
