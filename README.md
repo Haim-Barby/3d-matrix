@@ -58,15 +58,17 @@ The volumes are the lecturer's NRRD files. They match the public Drive folder [1
 
 Spacing below is the length of each index axis in the NRRD `space directions`, in mm per voxel. Sampling does not apply that spacing.
 
-| File | Shape | dtype | Spacing x, y, z (mm) |
-|---|---|---|---|
-| MRHead_1.nrrd | 256×256×130 | int16 | 1, 1, 1.3 |
-| biscuit_cake.nrrd | 256×256×130 | uint16 | 1, 1, 1.3 |
-| croissant_1.nrrd | 500×500×500 | uint8 | 0.37, 0.37, 0.37 |
-| onion.nrrd | 256×256×130 | uint8 | 0.55, 0.55, 0.715 |
-| swiss_roll.nrrd | 256×256×130 | uint32 | 1.1, 1.1, 1.43 |
+| File | Shape | dtype | Spacing x, y, z (mm) | Why |
+|---|---|---|---|---|
+| MRHead_1.nrrd | 256×256×130 | int16 | 1, 1, 1.3 | signed int16; anisotropic spacing |
+| biscuit_cake.nrrd | 256×256×130 | uint16 | 1, 1, 1.3 | uint16 voxels; anisotropic spacing |
+| croissant_1.nrrd | 500×500×500 | uint8 | 0.37, 0.37, 0.37 | only 500³ volume: performance check |
+| onion.nrrd | 256×256×130 | uint8 | 0.55, 0.55, 0.715 | uint8 voxels; anisotropic spacing |
+| swiss_roll.nrrd | 256×256×130 | uint32 | 1.1, 1.1, 1.43 | uint32 voxels; anisotropic spacing |
 
 MRHead's z vector length in the header is 1.29999542 mm. `csv/head.csv` (280 planes) and `csv/croissant.csv` (100 planes) are copies from the Drive folder, as is the 4-plane `csv/lecturer_example.csv`.
+
+Automated tests do not read these files. They use synthetic volumes, including the ramp M = x + 10y + 100z and similar cases in [tests/TESTING.md](tests/TESTING.md).
 
 ## Experiment
 
