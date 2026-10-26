@@ -4,7 +4,7 @@ Spec: [SRS.md](../SRS.md) and [ALGORITHM.md](../ALGORITHM.md). This run: 2026-10
 
 ## 1. Test plan (STP)
 
-**Scope.** The projection (`src/projection.py`), NRRD and CSV loading (`src/io_utils.py`), and the demo `Ex0.py`. Out of scope: a GUI, formats other than NRRD, and scaling images to millimetres.
+**Scope.** The projection (`src/projection.py`), planes (`src/plane.py`), NRRD and CSV loading (`src/io_utils.py`), and the demo `Ex0.py`. Out of scope: a GUI, formats other than NRRD, and scaling images to millimetres.
 
 **Levels.**
 

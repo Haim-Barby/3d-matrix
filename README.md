@@ -45,7 +45,7 @@ The image is 1 voxel per pixel in index space. It is not scaled to millimetres. 
 ## Layout
 
 - `Ex0.py` — demo program
-- `src/projection.py`, `src/io_utils.py` — projection, NRRD load, CSV load
+- `src/plane.py`, `src/projection.py`, `src/io_utils.py` — planes, projection, NRRD and CSV load
 - `data-NRRD/` — volumes
 - `csv/` — `head.csv`, `croissant.csv`, `lecturer_example.csv`
 - `video/` — `experiment.csv`, `experiment.mp4`, and a short write-up

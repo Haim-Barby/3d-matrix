@@ -79,7 +79,7 @@ Specify what the program must do: project a 3D volume (MRI-style raster data) on
 | NFR-3 | **Performance (target):** at least 100 FPS for a 500 × 500 × 500 volume. |
 | NFR-4 | **Performance (must):** at least 30 FPS for a 500 × 500 × 500 volume. |
 | NFR-5 | **Measurement:** NFR-3 and NFR-4 measure the projection only. NRRD loading and MP4 encoding are reported separately. |
-| NFR-6 | **Design:** the code shall be split into modules (NRRD loading, plane parsing, projection, video output, entry point), each testable without real MRI data. |
+| NFR-6 | **Design:** the code shall be split into modules (`src/io_utils.py` for NRRD and CSV loading, `src/plane.py` for plane parsing, `src/projection.py` for projection, and `Ex0.py` for video output and the entry point), each testable without real MRI data. |
 
 ---
 

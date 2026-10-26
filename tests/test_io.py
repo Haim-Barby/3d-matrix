@@ -7,7 +7,8 @@ import numpy as np
 import nrrd
 import pytest
 
-from io_utils import Plane, load_nrrd, load_planes
+from io_utils import load_nrrd, load_planes
+from plane import Plane
 from projection import project
 
 
