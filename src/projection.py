@@ -16,10 +16,12 @@ TOLERANCE = 0.001
 
 
 def round_half_up(values):
-    """Round to the nearest integer. Halves round up: floor(v + 0.5).
+    """Nearest integer. A value halfway between two integers rounds up.
 
-    This is the only rounding rule used for sizes, row lengths and sample
-    coordinates (ALGORITHM.md section 4.3). It is not banker's rounding.
+    ``floor(v + 0.5)`` is nearest-neighbour sampling with one tie-break:
+    ``1.5`` becomes ``2``, and ``-0.5`` becomes ``0``. It is not banker's
+    rounding, and it is not interpolation. Sizes, row lengths, and sample
+    coordinates all use this rule (ALGORITHM.md section 4.3).
     """
     arr = np.asarray(values, dtype=np.float64)
     rounded = np.floor(arr + 0.5)

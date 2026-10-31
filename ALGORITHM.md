@@ -161,12 +161,16 @@ check that `M.shape` equals the header `sizes`. The program does not parse NRRD
 itself. `pynrrd` and numpy are the dependencies of this algorithm.
 
 ### Issue 8: Exact isosceles assumption
-**Problem.** The method assumes `dist(a,b) = dist(a,c)` exactly and divides both legs
-by `Dab`. With real or integer voxel coordinates this rarely holds exactly; if
-`|ac| ≠ |ab|`, `a2` does not end at `c`.
-**Fix.** The parametrisation of issue 4 does not depend on leg lengths: `a2` reaches
-`c` exactly at `t = 1` regardless of `|ac|`. The plane is still accepted; a warning is
-issued if `| |ab| − |ac| | > 1` voxel.
+**Problem.** The method assumes `dist(a,b) = dist(a,c)` exactly. A point set that
+is not an isosceles triangle or trapezoid is not a legal plane.
+**Fix.** Lengths are compared in voxel-index units with tolerance `0.001`. A larger
+gap raises `ValueError` from `check_plane`, `project`, and `project_reference`.
+A trapezoid is also rejected when the four points are not coplanar (distance from
+the plane), the bases are not parallel (the component of one base perpendicular
+to the other, in coordinate units), the legs cross or point opposite ways, or the
+midline is not perpendicular to the bases. A rectangle passes. A slanted
+parallelogram does not. The duplicate apex of a triangle (`a' = a''`) is not an
+error. The demo catches that exception per CSV row.
 
 ---
 
@@ -237,9 +241,11 @@ it gives no speed-up and accumulates rounding error along the row.
 
 ### 4.3 Rounding rule
 
-All real-to-integer conversions (sizes, `n`, sample coordinates) use one rule:
-`round(v) = floor(v + 0.5)` (halves round up). It is used consistently, so a point
-exactly halfway between two voxels always maps to the same voxel.
+Sampling is nearest voxel. There is no interpolation. All real-to-integer
+conversions (sizes, `n`, sample coordinates) use one rule:
+`round(v) = floor(v + 0.5)`. That is ordinary nearest-integer rounding, with one
+tie-break: a coordinate exactly halfway between two voxels rounds up (`1.5 → 2`,
+`-0.5 → 0`). The tie always chooses the same voxel. It is not banker's rounding.
 
 ### 4.4 From projection E to image I
 
@@ -285,10 +291,12 @@ once at load time, not per plane.
 | Plane entirely outside the volume | Valid; returns an all-zero image. |
 | Plane partly outside the volume | Samples outside are 0 (issue 6). |
 | Apex row (`t = 0`, triangle) | `n = 0`, a single sample at `a`, centred. |
-| `b = c` (zero base) | Degenerate; rejected with an error. |
-| `a`, `b`, `c` collinear, or `h = 0` | Degenerate; rejected with an error. |
-| Coincident points | Degenerate; rejected with an error. |
-| Legs differ by more than 1 voxel | Accepted, with a warning (issue 8). |
-| Point coordinates not numeric, or wrong count | Rejected with an error naming the row. |
+| `b = c` (zero base) | Rejected with `ValueError`. |
+| `a`, `b`, `c` collinear, or `h = 0` | Rejected with `ValueError`. |
+| Coincident points | Rejected with `ValueError`. |
+| Legs differ by more than 0.001 | Rejected with `ValueError` (issue 8). |
+| Trapezoid not planar, bases not parallel, legs crossing, or not symmetric | Rejected with `ValueError`. |
+| Rectangle, including a rotated one | Valid. |
+| Point coordinates not numeric, NaN, infinity, or wrong count | Rejected with `ValueError`. In the demo, that row is an error frame. |
 | Constant volume (`hi = lo`) | `I` is all zeros. |
 

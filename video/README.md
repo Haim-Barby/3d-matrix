@@ -29,4 +29,4 @@ python Ex0.py data-NRRD/MRHead_1.nrrd video/experiment.csv video/experiment.mp4
 | 5 | triangle | oblique | 170×162 | oblique cut of the head; apex on top |
 | 6 | trapezoid | coronal, x=140 | 161×161 | coronal face; the long base runs past z=129 |
 
-The run printed no leg warnings. Projection took 0.005 s (1132.5 planes/s), writing 6 frames at 1 fps on a 172×162 canvas. Nonzero row widths narrow toward the top: 1→161, 49→115, 1→171, 61→151, 1→170, and 65→115. Frame 6 is 161×161 with 14618 nonzero pixels; its base stays at width 115 because z runs past 129.
+A later check wrote `/tmp/check_experiment.mp4` and left the stored MP4 unchanged. Projection took 0.005 s (1203.5 planes/s): 6 frames, ok 6, errors 0, canvas 172×162. Nonzero row widths narrow toward the top: 1→161, 49→115, 1→171, 61→151, 1→170, and 65→115. Frame 6 is 161×161 with 14618 nonzero pixels; its base stays at width 115 because z runs past 129.
