@@ -7,9 +7,9 @@ import numpy as np
 import nrrd
 import pytest
 
-from io_utils import _parse_plane_line, load_nrrd, load_planes
+from io_utils import load_nrrd, load_planes, read_plane_rows
 from plane import Plane
-from projection import TOLERANCE, check_plane, project
+from projection import TOLERANCE, project
 
 
 def test_tc16_nrrd_uint16_axis_order(tmp_path):
@@ -248,17 +248,11 @@ def test_tc24_lecturer_example_row4():
     path = Path(__file__).resolve().parents[1] / "csv" / "lecturer_example.csv"
     kept = []
     rejected = []
-    for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
-        stripped = line.strip()
-        if stripped == "" or stripped.startswith("#") or stripped.startswith("Number of Points"):
-            continue
-        try:
-            plane = _parse_plane_line(line, line_no, path)
-            check_plane(*plane.corners())
-        except ValueError as exc:
-            rejected.append((line_no, str(exc)))
-            continue
-        kept.append(plane)
+    for line_no, plane, error in read_plane_rows(path):
+        if error is not None:
+            rejected.append((line_no, error))
+        else:
+            kept.append(plane)
 
     assert [plane.line for plane in kept] == [2, 3, 5]
     assert rejected[0][0] == 4
