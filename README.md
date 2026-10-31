@@ -24,6 +24,21 @@ pip install -r requirements.txt
 
 Dependencies: numpy, pynrrd, opencv-python, pytest.
 
+### macOS
+
+```
+cd "/Users/nobrby/Desktop/3d-matrix-main"
+
+python3 -m venv .venv
+source .venv/bin/activate
+
+python -m pip install -r requirements.txt
+
+python Ex0.py data-NRRD/MRHead_1.nrrd video/experiment.csv output.mp4
+
+open output.mp4
+```
+
 ## Usage
 
 From the repo root:
