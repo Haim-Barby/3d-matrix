@@ -5,7 +5,6 @@ wide, so the reference loop stays cheap inside an N³ ramp.
 """
 
 import time
-import warnings
 
 import numpy as np
 import pytest
@@ -35,10 +34,8 @@ def _expected_shape(a_prime, a_second, b, c):
 
 
 def _project(M, corners):
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", UserWarning)
-        ref = project_reference(M, *corners)
-        fast = project(M, *corners)
+    ref = project_reference(M, *corners)
+    fast = project(M, *corners)
     assert ref.dtype == M.dtype == fast.dtype
     assert np.array_equal(ref, fast)
     assert ref.shape == _expected_shape(*corners)
@@ -54,19 +51,18 @@ def _planes(n):
     """A rectangle, a plane outside the cube, a plane that crosses the edge."""
     side = 5
     rectangle = ((1, 1, 1), (side, 1, 1), (1, side, 1), (side, side, 1))
-    outside = ((-4.0, -4.0, -4.0), (-4.0, -4.0, -4.0), (-8.0, -1.0, -3.0), (-1.0, -1.0, -6.0))
+    # Isosceles triangle entirely outside the cube (equal legs).
+    outside = ((-5.0, -5.0, -5.0), (-5.0, -5.0, -5.0), (-8.0, -2.0, -5.0), (-2.0, -2.0, -5.0))
     # Apex inside the ramp, base past x = 0, legs equal.
     crossing = ((2.0, 4.0, 1.0), (2.0, 4.0, 1.0), (-2.0, 0.0, 1.0), (6.0, 0.0, 1.0))
-    rng = np.random.default_rng(1000 + n)
-    random_planes = []
-    for _ in range(4):
-        points = rng.uniform(-1.0, 12.0, size=(4, 3))
-        # Triangle, then a trapezoid, alternating.
-        if len(random_planes) % 2 == 0:
-            random_planes.append((points[0], points[0], points[1], points[2]))
-        else:
-            random_planes.append(tuple(points))
-    return rectangle, outside, crossing, random_planes
+    # Valid planes in three orientations, plus one oblique triangle.
+    varied = [
+        ((2.0, 6.0, 1.0), (2.0, 6.0, 1.0), (0.0, 1.0, 1.0), (4.0, 1.0, 1.0)),
+        ((1.0, 2.0, 1.0), (5.0, 2.0, 1.0), (0.0, 2.0, 6.0), (6.0, 2.0, 6.0)),
+        ((2.0, 1.0, 1.0), (2.0, 5.0, 1.0), (2.0, 0.0, 6.0), (2.0, 6.0, 6.0)),
+        ((2.0, 3.0, 1.0), (2.0, 3.0, 1.0), (0.0, 0.0, 0.0), (4.0, 0.0, 2.0)),
+    ]
+    return rectangle, outside, crossing, varied
 
 
 @pytest.mark.parametrize("n", SIZES)
@@ -85,14 +81,8 @@ def test_tc13_invariants_hold_as_n_grows(n):
     assert np.any(crossed == 0)
     assert np.any(crossed != 0)
 
-    matched = 0
     for corners in random_planes:
-        try:
-            _project(volume, corners)
-        except ValueError:
-            continue
-        matched += 1
-    assert matched >= 2
+        _project(volume, corners)
 
     lo, hi = window(volume)
     assert lo == pytest.approx(float(np.percentile(volume, 1)))

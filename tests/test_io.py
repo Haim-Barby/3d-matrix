@@ -7,9 +7,9 @@ import numpy as np
 import nrrd
 import pytest
 
-from io_utils import load_nrrd, load_planes
+from io_utils import _parse_plane_line, load_nrrd, load_planes
 from plane import Plane
-from projection import project
+from projection import TOLERANCE, check_plane, project
 
 
 def test_tc16_nrrd_uint16_axis_order(tmp_path):
@@ -98,9 +98,9 @@ def test_tc19_csv_triangle_and_trapezoid(tmp_path):
     path.write_text(
         "\n".join(
             [
-                "3,0, 0, 0, 0, 0, 10, 10, 0, 5,,,",
+                "3,5, 6, 7.5, 0, 0, 10, 10, 0, 5,,,",
                 "",
-                "3,0.5, 1, 2, 3, 4, 5, 6, 7, 8,,,",
+                "3,0.5, 0, 0, -1, 2, 0, 2, 2, 0,,,",
                 "4,1, 1, 1, 1, 5, 1, 4, 1, 1, 4, 5, 1",
             ]
         )
@@ -114,7 +114,7 @@ def test_tc19_csv_triangle_and_trapezoid(tmp_path):
     assert planes[0].line == 1
     assert np.array_equal(
         planes[0].points,
-        np.array([[0, 0, 0], [0, 0, 10], [10, 0, 5]], dtype=np.float64),
+        np.array([[5, 6, 7.5], [0, 0, 10], [10, 0, 5]], dtype=np.float64),
     )
     assert planes[1].is_triangle
     assert planes[1].line == 3
@@ -202,7 +202,7 @@ def test_tc20_csv_header_comments_blanks(tmp_path):
                 "Number of Points (3 or 4),x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4",
                 "",
                 "# a comment, with spaces below",
-                "  3 ,  -1.5 , 0 , 0 ,  0 , 0 , 4 ,  4 , 0 , 4 , , , ",
+                "  3 ,  -1.5 , 0 , 0 ,  -3.5 , 3 , 0 ,  0.5 , 3 , 0 , , , ",
                 "4, 1, 1, 1, 1, 5, 1, 4, 1, 1, 4, 5, 1",
             ]
         )
@@ -240,24 +240,45 @@ def test_tc22_csv_count_mismatch(tmp_path):
 
 
 def test_tc24_lecturer_example_row4():
-    """TC-24. FR-3, FR-4. Row 4 of lecturer_example.csv: equal legs, no warning."""
+    """TC-24. FR-3, FR-4. The trapezoid on line 5 has equal legs and parallel bases.
+
+    Line 4 of the same file is a triangle whose legs differ by about 20, so
+    strict loading stops there. The file is not edited.
+    """
     path = Path(__file__).resolve().parents[1] / "csv" / "lecturer_example.csv"
-    planes = load_planes(path)
-    assert len(planes) == 4
-    plane = planes[3]
+    kept = []
+    rejected = []
+    for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        stripped = line.strip()
+        if stripped == "" or stripped.startswith("#") or stripped.startswith("Number of Points"):
+            continue
+        try:
+            plane = _parse_plane_line(line, line_no, path)
+            check_plane(*plane.corners())
+        except ValueError as exc:
+            rejected.append((line_no, str(exc)))
+            continue
+        kept.append(plane)
+
+    assert [plane.line for plane in kept] == [2, 3, 5]
+    assert rejected[0][0] == 4
+    assert "unequal legs" in rejected[0][1]
+
+    plane = kept[-1]
     assert not plane.is_triangle
     assert plane.line == 5
-
     a_prime, a_second, b, c = plane.corners()
-    # Legs a'→b and a''→c are equal; the top a'→a'' is parallel to the base b→c.
-    assert abs(np.linalg.norm(a_prime - b) - np.linalg.norm(a_second - c)) <= 1
-    assert np.linalg.norm(np.cross(a_second - a_prime, c - b)) < 1e-6
+    leg_gap = abs(np.linalg.norm(a_prime - b) - np.linalg.norm(a_second - c))
+    assert leg_gap <= TOLERANCE
+    base = c - b
+    top = a_second - a_prime
+    unit = base / np.linalg.norm(base)
+    parallel_gap = np.linalg.norm(top - np.dot(top, unit) * unit)
+    assert parallel_gap <= TOLERANCE
 
     volume = np.zeros((2, 2, 2), dtype=np.uint8)
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        plane.project(volume)
-    assert caught == []
+    image = plane.project(volume)
+    assert image.ndim == 2
 
 
 def test_tc25_head_csv_has_280_planes():

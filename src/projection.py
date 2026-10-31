@@ -6,12 +6,13 @@ Both return the same raw image ``E``. ``window`` and ``to_image`` turn ``E``
 into an 8-bit grayscale image (section 4.4).
 """
 
-import warnings
-
 import numpy as np
 
-# Distances below this are treated as zero (coincident points, zero base, flat).
-_EPS = 1e-8
+# Lengths and distances, in voxel-index units. A difference of this size is
+# still a valid plane. Anything larger raises ValueError. The same number is
+# used for leg lengths, the height, the distance from a line, and the
+# distance from a plane. It is not applied to an unnormalized cross product.
+TOLERANCE = 0.001
 
 
 def round_half_up(values):
@@ -44,7 +45,6 @@ def project_reference(M, a_prime, a_second, b, c):
     """PROJECT by the section 4.1 loop. A triangle is a' = a'' = a."""
     _check_volume(M)
     ap, app, bb, cc, H, W = _geometry(a_prime, a_second, b, c)
-    _warn_unequal_legs(ap, app, bb, cc)
 
     E = np.zeros((H, W), dtype=M.dtype)
     for y in range(H):
@@ -78,7 +78,6 @@ def project(M, a_prime, a_second, b, c):
     """
     _check_volume(M)
     ap, app, bb, cc, H, W = _geometry(a_prime, a_second, b, c)
-    _warn_unequal_legs(ap, app, bb, cc)
 
     if H > 1:
         t = np.arange(H, dtype=np.float64) / (H - 1)
@@ -165,39 +164,155 @@ def _distance(p, q):
     return float(np.linalg.norm(delta))
 
 
-def _is_collinear(ap, app, b, c):
-    """True when the three or four corners lie on one line (zero area)."""
-    edges = (app - ap, b - ap, c - ap)
-    for i in range(3):
-        for j in range(i + 1, 3):
-            if np.linalg.norm(np.cross(edges[i], edges[j])) > _EPS:
-                return False
-    return True
+def _point_line_distance(point, start, end):
+    """Distance from ``point`` to the line through ``start`` and ``end``."""
+    direction = end - start
+    length = float(np.linalg.norm(direction))
+    if length <= TOLERANCE:
+        return float(np.linalg.norm(point - start))
+    return float(np.linalg.norm(np.cross(point - start, direction)) / length)
+
+
+def _plane_distance(point, a, b, c):
+    """Distance from ``point`` to the plane through ``a``, ``b`` and ``c``.
+
+    Returns None when those three points do not define a plane (the height
+    of triangle a-b-c is within ``TOLERANCE``).
+    """
+    edge = b - a
+    length = float(np.linalg.norm(edge))
+    if length <= TOLERANCE:
+        return None
+    normal = np.cross(edge, c - a)
+    height = float(np.linalg.norm(normal) / length)
+    if height <= TOLERANCE:
+        return None
+    unit = normal / np.linalg.norm(normal)
+    return abs(float(np.dot(point - a, unit)))
+
+
+def _plane_normal(axis, other):
+    """Unit normal of ``axis`` and ``other``, or None when they are parallel.
+
+    ``axis`` is already a unit vector. The test is the length
+    ``||axis × other|| / ||other||``, not the raw cross product.
+    """
+    length = float(np.linalg.norm(other))
+    if length <= TOLERANCE:
+        return None
+    normal = np.cross(axis, other)
+    if float(np.linalg.norm(normal)) / length <= TOLERANCE:
+        return None
+    return normal / np.linalg.norm(normal)
+
+
+def _legs_cross(ap, app, bb, cc):
+    """True when leg a'→b properly crosses leg a''→c."""
+    top = app - ap
+    top_len = float(np.linalg.norm(top))
+    if top_len <= TOLERANCE:
+        return False
+    axis_u = top / top_len
+    normal = _plane_normal(axis_u, bb - ap)
+    if normal is None:
+        normal = _plane_normal(axis_u, cc - bb)
+    if normal is None:
+        return False
+    axis_v = np.cross(normal, axis_u)
+
+    def flat(point):
+        delta = point - ap
+        return float(np.dot(delta, axis_u)), float(np.dot(delta, axis_v))
+
+    return _segments_cross(flat(ap), flat(bb), flat(app), flat(cc))
+
+
+def _segments_cross(p, q, r, s):
+    """True when open segments pq and rs cross in 2D."""
+
+    def orient(a, b, c):
+        return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+
+    o1 = orient(p, q, r)
+    o2 = orient(p, q, s)
+    o3 = orient(r, s, p)
+    o4 = orient(r, s, q)
+    return o1 * o2 < 0.0 and o3 * o4 < 0.0
+
+
+def _validate(ap, app, bb, cc):
+    """Raise ValueError if the four corners are not an isosceles plane.
+
+    ``a' == a''`` is the triangle and is not an error. A trapezoid must be
+    planar, with parallel bases in the same direction, equal legs, and the
+    midline perpendicular to the bases (so a slanted parallelogram fails).
+    """
+    if all(_distance(ap, point) <= TOLERANCE for point in (app, bb, cc)):
+        raise ValueError("degenerate plane: coincident points")
+    base_len = _distance(bb, cc)
+    if base_len <= TOLERANCE:
+        raise ValueError("degenerate plane: zero base (b = c)")
+    leg_left = _distance(ap, bb)
+    leg_right = _distance(app, cc)
+    if leg_left <= TOLERANCE or leg_right <= TOLERANCE:
+        raise ValueError("degenerate plane: zero leg")
+
+    top_len = _distance(ap, app)
+    top_mid = (ap + app) / 2.0
+    base_mid = (bb + cc) / 2.0
+    if _distance(top_mid, base_mid) <= TOLERANCE:
+        raise ValueError("degenerate plane: zero height")
+    if top_len <= TOLERANCE:
+        if _point_line_distance(ap, bb, cc) <= TOLERANCE:
+            raise ValueError("degenerate plane: collinear points")
+    elif (
+        _point_line_distance(ap, bb, cc) <= TOLERANCE
+        and _point_line_distance(app, bb, cc) <= TOLERANCE
+    ):
+        raise ValueError("degenerate plane: collinear points")
+
+    if abs(leg_left - leg_right) > TOLERANCE:
+        raise ValueError(
+            f"degenerate plane: unequal legs ({leg_left:.4f} and {leg_right:.4f})"
+        )
+    if top_len <= TOLERANCE:
+        return
+
+    gap = _plane_distance(app, ap, bb, cc)
+    if gap is None:
+        gap = _plane_distance(cc, ap, app, bb)
+    if gap is None:
+        raise ValueError("degenerate plane: collinear points")
+    if gap > TOLERANCE:
+        raise ValueError(f"trapezoid is not planar (distance {gap:.4f})")
+
+    base_vec = cc - bb
+    top_vec = app - ap
+    unit_base = base_vec / base_len
+    parallel_gap = float(np.linalg.norm(top_vec - np.dot(top_vec, unit_base) * unit_base))
+    if parallel_gap > TOLERANCE:
+        raise ValueError(f"trapezoid bases are not parallel (gap {parallel_gap:.4f})")
+
+    unit_top = top_vec / top_len
+    if float(np.dot(unit_top, unit_base)) <= 0.0 or _legs_cross(ap, app, bb, cc):
+        raise ValueError("trapezoid is self-intersecting")
+
+    shift = abs(float(np.dot(top_mid - base_mid, unit_base)))
+    if shift > TOLERANCE:
+        raise ValueError(f"trapezoid is not symmetric (shift {shift:.4f})")
 
 
 def _geometry(a_prime, a_second, b, c):
-    """Shared shape of the output image, or an error if the plane is degenerate."""
+    """Shared shape of the output image, or an error if the plane is invalid."""
     ap = _as_point(a_prime, "a'")
     app = _as_point(a_second, "a''")
     bb = _as_point(b, "b")
     cc = _as_point(c, "c")
-
-    corners = (ap, app, bb, cc)
-    if all(_distance(corners[0], p) <= _EPS for p in corners[1:]):
-        raise ValueError("degenerate plane: coincident points")
-    if _distance(bb, cc) <= _EPS:
-        raise ValueError("degenerate plane: zero base (b = c)")
-    if _distance(ap, bb) <= _EPS or _distance(app, cc) <= _EPS:
-        raise ValueError("degenerate plane: zero leg")
-    if _is_collinear(ap, app, bb, cc):
-        raise ValueError("degenerate plane: collinear points")
+    _validate(ap, app, bb, cc)
 
     top_mid = (ap + app) / 2.0
     base_mid = (bb + cc) / 2.0
     height = _distance(top_mid, base_mid)
-    if height <= _EPS:
-        raise ValueError("degenerate plane: zero height")
-
     w_top = _distance(ap, app)
     w_base = _distance(bb, cc)
     H = round_half_up(height) + 1
@@ -206,18 +321,9 @@ def _geometry(a_prime, a_second, b, c):
 
 
 def check_plane(a_prime, a_second, b, c):
-    """Raise ValueError if the plane is degenerate (zero leg, zero height, ...)."""
+    """Raise ValueError if the corners are not a valid triangle or trapezoid.
+
+    Called by ``project`` and ``project_reference`` as well as by the CSV
+    loader, so a direct call is held to the same rules.
+    """
     _geometry(a_prime, a_second, b, c)
-
-
-def _warn_unequal_legs(ap, app, b, c):
-    """Issue 8: unequal legs are accepted, with a warning above 1 voxel."""
-    left = _distance(ap, b)
-    right = _distance(app, c)
-    gap = abs(left - right)
-    if gap > 1.0:
-        warnings.warn(
-            f"legs differ by {gap:.3f} voxels (more than 1); plane accepted",
-            UserWarning,
-            stacklevel=2,
-        )

@@ -6,13 +6,13 @@ images were worked out from PROJECT: t = y/(H-1), n = round(dist), and
 round(v) = floor(v+0.5).
 """
 
-import warnings
-
 import numpy as np
 import pytest
 
 from io_utils import load_planes
 from projection import (
+    TOLERANCE,
+    check_plane,
     project,
     project_reference,
     round_half_up,
@@ -32,10 +32,8 @@ def _ramp(shape, dtype=np.uint16):
 
 def _both(M, a_prime, a_second, b, c):
     """Loop and vectorised PROJECT must return the same E."""
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", UserWarning)
-        ref = project_reference(M, a_prime, a_second, b, c)
-        fast = project(M, a_prime, a_second, b, c)
+    ref = project_reference(M, a_prime, a_second, b, c)
+    fast = project(M, a_prime, a_second, b, c)
     assert ref.dtype == M.dtype
     assert np.array_equal(ref, fast)
     return ref
@@ -221,30 +219,31 @@ def test_tc09_partial_plane_exact():
     assert np.array_equal(image, expected)
 
 
-def test_tc10_leg_warning_threshold():
-    """TC-10. FR-4. A gap of 1 voxel is quiet. A gap of 1.1 warns.
+def test_tc10_unequal_legs_are_rejected():
+    """TC-10. FR-4. Legs may differ by 0.001. A larger gap is an error.
 
-    Both planes are still projected, and the base ends on b and on round(c).
+    The equal-leg triangle is still projected, and both base ends are hit.
     """
-    M = np.zeros((6, 6, 2), dtype=np.uint16)
-    apex = (0.0, 0.0, 0.0)
-    base_left = (4.0, 0.0, 0.0)
-    # |ab| = 4, |ac| = 5, gap = 1.
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", UserWarning)
-        quiet = _both(M, apex, apex, base_left, (0.0, 5.0, 0.0))
-    assert quiet.shape == (4, 7)
+    from projection import TOLERANCE
 
-    M[4, 0, 0] = 21
-    M[0, 5, 0] = 22
-    base_right = (0.0, 5.1, 0.0)
-    with pytest.warns(UserWarning, match="1.100"):
-        ref = project_reference(M, apex, apex, base_left, base_right)
-    with pytest.warns(UserWarning, match="1.100"):
-        fast = project(M, apex, apex, base_left, base_right)
-    assert np.array_equal(ref, fast)
-    assert ref[-1, 0] == 21
-    assert ref[-1, -1] == 22
+    M = np.zeros((6, 6, 2), dtype=np.uint16)
+    M[3, 0, 0] = 21
+    M[0, 3, 0] = 22
+    apex = (0.0, 0.0, 0.0)
+    base_left = (3.0, 0.0, 0.0)
+    # |ab| = |ac| = 3. Both base voxels are sampled.
+    exact = _both(M, apex, apex, base_left, (0.0, 3.0, 0.0))
+    assert exact[-1, 0] == 21
+    assert exact[-1, -1] == 22
+
+    # |ac| = 3.001. The difference is the tolerance, so the plane is valid.
+    accepted = _both(M, apex, apex, base_left, (0.0, 3.0 + TOLERANCE, 0.0))
+    assert accepted.shape[0] > 1
+
+    with pytest.raises(ValueError, match="unequal legs"):
+        project(M, apex, apex, base_left, (0.0, 3.002, 0.0))
+    with pytest.raises(ValueError, match="unequal legs"):
+        project_reference(M, apex, apex, base_left, (0.0, 4.0, 0.0))
 
 
 def test_tc11_degenerate_planes_are_rejected():
@@ -285,3 +284,77 @@ def test_tc12_window_and_to_image():
     black = to_image(np.array([[7, 0, 3]], dtype=np.uint8), 7, 7)
     assert black.dtype == np.uint8
     assert np.array_equal(black, [[0, 0, 0]])
+
+
+def test_tc32_valid_planes_in_several_orientations():
+    """TC-32. FR-4, FR-6. Triangles, trapezoids, and a rectangle all project.
+
+    Orientations are the coordinate planes and one oblique cut. A duplicate
+    apex (a' = a'') is the triangle, not an error. The reference and the
+    vectorised path agree.
+    """
+    volume = np.zeros((8, 8, 8), dtype=np.uint8)
+    volume[2, 2, 2] = 9
+    shapes = {
+        "xy triangle": ((2, 6, 1), (2, 6, 1), (0, 1, 1), (4, 1, 1)),
+        "xz triangle": ((2, 1, 6), (2, 1, 6), (0, 1, 1), (4, 1, 1)),
+        "yz triangle": ((1, 2, 6), (1, 2, 6), (1, 0, 1), (1, 4, 1)),
+        "oblique triangle": ((2, 3, 1), (2, 3, 1), (0, 0, 0), (4, 0, 2)),
+        "xy trapezoid": ((1, 2, 0), (5, 2, 0), (0, 0, 0), (6, 0, 0)),
+        "xz trapezoid": ((1, 2, 1), (5, 2, 1), (0, 2, 6), (6, 2, 6)),
+        "yz trapezoid": ((2, 1, 1), (2, 5, 1), (2, 0, 6), (2, 6, 6)),
+        "oblique trapezoid": ((1, 2, 1), (5, 2, 1), (0, 0, 0), (6, 0, 0)),
+        "rectangle": ((0, 2, 0), (4, 2, 0), (0, 0, 0), (4, 0, 0)),
+        "rotated square": ((-2, 2, 0), (0, 4, 0), (0, 0, 0), (2, 2, 0)),
+    }
+    for name, corners in shapes.items():
+        check_plane(*corners)
+        image = _both(volume, *corners)
+        assert image.ndim == 2 and image.size > 1, name
+
+
+def test_tc33_slanted_parallelogram_is_rejected():
+    """TC-33. FR-4. Equal legs and parallel sides are not enough.
+
+    The midline of this parallelogram is shifted by a voxel, so it is not
+    an isosceles trapezoid.
+    """
+    # a'=(1,2,0), a''=(5,2,0), b=(0,0,0), c=(4,0,0)
+    with pytest.raises(ValueError, match="not symmetric"):
+        check_plane((1, 2, 0), (5, 2, 0), (0, 0, 0), (4, 0, 0))
+    with pytest.raises(ValueError, match="not symmetric"):
+        project(np.zeros((4, 4, 2), dtype=np.uint8), (1, 2, 0), (5, 2, 0), (0, 0, 0), (4, 0, 0))
+
+
+def test_tc34_non_coplanar_trapezoid_is_rejected():
+    """TC-34. FR-4. The fourth corner must lie within 0.001 of the plane."""
+    volume = np.zeros((6, 6, 2), dtype=np.uint8)
+    # z = 0.001 is the tolerance. z = 0.002 is not.
+    check_plane((0, 2, 0), (4, 2, 0.001), (0, 0, 0), (4, 0, 0))
+    project(volume, (0, 2, 0), (4, 2, TOLERANCE), (0, 0, 0), (4, 0, 0))
+    with pytest.raises(ValueError, match="not planar"):
+        check_plane((0, 2, 0), (4, 2, 0.002), (0, 0, 0), (4, 0, 0))
+    with pytest.raises(ValueError, match="not planar"):
+        project_reference(volume, (0, 2, 0), (4, 2, 0.05), (0, 0, 0), (4, 0, 0))
+
+
+def test_tc35_non_parallel_and_self_intersection():
+    """TC-35. FR-4. Bases must be parallel, and the legs must not cross."""
+    with pytest.raises(ValueError, match="not parallel"):
+        check_plane((0, 2, 0), (5, 1.732, 0), (0, 0, 0), (4, 0, 0))
+    # Swapped base: a'=(0,2), a''=(4,2), b=(4,0), c=(0,0). The legs cross.
+    with pytest.raises(ValueError, match="self-intersecting"):
+        check_plane((0, 2, 0), (4, 2, 0), (4, 0, 0), (0, 0, 0))
+    with pytest.raises(ValueError, match="self-intersecting"):
+        project(np.zeros((6, 6, 1), dtype=np.uint8), (0, 2, 0), (4, 2, 0), (4, 0, 0), (0, 0, 0))
+
+
+def test_tc36_bad_point_values_raise():
+    """TC-36. FR-4, FR-5. Direct calls reject a short point, NaN, and infinity."""
+    volume = np.zeros((2, 2, 2), dtype=np.uint8)
+    with pytest.raises(ValueError, match="3 coordinates"):
+        project(volume, (0, 0), (0, 0, 0), (1, 0, 0), (0, 1, 0))
+    with pytest.raises(ValueError, match="non-finite"):
+        check_plane((0, 0, 0), (0, 0, 0), (1, 0, 0), (float("nan"), 1, 0))
+    with pytest.raises(ValueError, match="non-finite"):
+        project_reference(volume, (0, 2, 0), (0, 2, 0), (0, 0, 0), (float("inf"), 0, 0))

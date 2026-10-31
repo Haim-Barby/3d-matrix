@@ -51,7 +51,7 @@ def test_tc27_ex0_one_frame_per_row(tmp_path):
     mp4_path = tmp_path / "out.mp4"
     _write_volume(nrrd_path)
     csv_path.write_text(
-        "3,1,1,1, 1,6,1, 6,6,1,,,\n"
+        "3,3.5,1,1, 1,6,1, 6,6,1,,,\n"
         "4,0,0,2, 0,5,2, 4,0,2, 4,5,2\n",
         encoding="utf-8",
     )
@@ -83,7 +83,7 @@ def test_tc28_bad_row_exits(tmp_path):
     mp4_path = tmp_path / "out.mp4"
     _write_volume(nrrd_path)
     csv_path.write_text(
-        "3,1,1,1, 1,6,1, 6,6,1,,,\n"
+        "3,3.5,1,1, 1,6,1, 6,6,1,,,\n"
         "1,2,3,4,5\n",
         encoding="utf-8",
     )
@@ -99,7 +99,7 @@ def test_tc29_missing_file_and_usage(tmp_path):
     """TC-29. FR-1, FR-5. A missing NRRD and a short command line exit with a message."""
     missing = tmp_path / "missing.nrrd"
     csv_path = tmp_path / "planes.csv"
-    csv_path.write_text("3,1,1,1, 1,6,1, 6,6,1,,,\n", encoding="utf-8")
+    csv_path.write_text("3,3.5,1,1, 1,6,1, 6,6,1,,,\n", encoding="utf-8")
     mp4_path = tmp_path / "out.mp4"
 
     result = _run([str(missing), str(csv_path), str(mp4_path)])
